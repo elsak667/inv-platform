@@ -45,6 +45,9 @@
                 </el-row>
               </div>
               <el-button type="primary" link size="small" @click="addUnit" style="margin-bottom:4px">+ 新增物业</el-button>
+              <el-row :gutter="6" style="margin-top:6px">
+                <el-col :span="6" :offset="18"><div style="font-size:11px;color:#606266;margin-bottom:1px">出售收回总额（万元）</div><el-input-number v-model="params.sale.revenue" :min="0" controls-position="right" style="width:100%" size="small" /></el-col>
+              </el-row>
             </div>
 
             <!-- ==================== 二、经营预期 ==================== -->
@@ -183,19 +186,25 @@
                     @click="selectedPlan = p.plan; $nextTick(drawChart)">
                     <h4 style="margin:0 0 10px;font-size:14px;color:#409eff;text-align:center">{{ p.plan }}</h4>
                     <el-row :gutter="8">
-                      <el-col :span="12" style="text-align:center">
-                        <div style="font-size:11px;color:#999">项目毛利</div>
-                        <div :style="'font-size:18px;font-weight:700;' + (Number(p.project_gross_profit) >= 0 ? 'color:#67c23a' : 'color:#f56c6c')">
-                          {{ fmt0(p.project_gross_profit) }}
-                          <span style="font-size:11px;font-weight:400;color:#999">万</span>
+                      <el-col :span="12">
+                        <div style="font-size:11px;color:#999;text-align:center">项目毛利</div>
+                        <div style="text-align:center;font-size:18px;font-weight:700;color:#67c23a">
+                          {{ fmt0(p.project_gross_profit) }}<span style="font-size:11px;font-weight:400;color:#999">万</span>
                         </div>
+                        <div style="font-size:10px;color:#999;text-align:center;margin-top:2px">
+                          运营毛利 {{ fmt0(p.operating_profit_total) }} + 出售毛利 {{ fmt0(p.sale_profit) }}
+                        </div>
+                        <div style="font-size:10px;color:#bbb;text-align:center">出售毛利 = 累计折旧 {{ fmt0(p.cumulative_depreciation) }}</div>
                       </el-col>
-                      <el-col :span="12" style="text-align:center">
-                        <div style="font-size:11px;color:#999">现金流结余</div>
-                        <div :style="'font-size:18px;font-weight:700;' + (Number(p.cash_flow_total) >= 0 ? 'color:#67c23a' : 'color:#f56c6c')">
-                          {{ fmt0(p.cash_flow_total) }}
-                          <span style="font-size:11px;font-weight:400;color:#999">万</span>
+                      <el-col :span="12">
+                        <div style="font-size:11px;color:#999;text-align:center">现金流结余</div>
+                        <div style="text-align:center;font-size:18px;font-weight:700;color:#67c23a">
+                          {{ fmt0(p.cash_flow_total) }}<span style="font-size:11px;font-weight:400;color:#999">万</span>
                         </div>
+                        <div style="font-size:10px;color:#999;text-align:center;margin-top:2px">
+                          持有期收支 {{ fmt0(p.cash_flow_total - p.sale_revenue) }} + 出售 {{ fmt0(p.sale_revenue) }}
+                        </div>
+                        <div style="font-size:10px;color:#bbb;text-align:center">持有期收支包含租金·还本·利息·税费·资本金</div>
                       </el-col>
                     </el-row>
                   </el-card>
@@ -230,6 +239,8 @@
                 <el-table-column prop="opex" label="运营成本" :formatter="fmt" align="right" />
                 <el-table-column prop="finance_cost" label="财务成本" :formatter="fmt" align="right" />
                 <el-table-column prop="operating_profit" label="运营毛利" :formatter="fmt" align="right" />
+                <el-table-column prop="sale_revenue" label="出售收回" :formatter="fmt" align="right" />
+                <el-table-column prop="loan_balance" label="贷款余额" :formatter="fmt" align="right" />
               </el-table>
             </el-card>
 
@@ -238,6 +249,7 @@
               <template #header>
                 <div style="display:flex;align-items:center;gap:12px">
                   <span style="font-weight:600;font-size:14px">分析报告</span>
+                  <el-switch v-model="reportAiMode" active-text="AI增强" inactive-text="标准" size="small" style="margin-right:4px" />
                   <el-button type="primary" size="small" @click="doGenerateReport" :loading="reportLoading">生成报告</el-button>
                   <el-button v-if="reportMd" size="small" @click="copyReport">复制</el-button>
                   <el-button v-if="reportMd" size="small" @click="downloadReport">下载</el-button>
@@ -279,6 +291,7 @@ export default {
       reportLoading: false,
       reportMd: '',
       reportOutline: '',
+      reportAiMode: false,
     }
   },
   computed: {
@@ -301,7 +314,7 @@ export default {
     pct1(v) { return v != null ? (v * 100).toFixed(1) + '%' : '' },
     pct2(v) { return v != null ? (v * 100).toFixed(2) + '%' : '' },
     unpct(v) { return parseFloat(v.replace('%', '')) / 100 },
-    fmt0(v) { return Number(v).toFixed(0) },
+    fmt0(v) { return Number(v).toFixed(2) },
     stripMeta(tpl) { const { meta, ...rest } = tpl; return rest },
     addUnit() {
       this.params.units.push({ name: '', units: 1, area: 1000, price_per_sqm: 5, market_rent: 100, discount: 0.8, decoration_cost_per_sqm: 1500 })
@@ -348,7 +361,7 @@ export default {
     async doGenerateReport() {
       this.reportLoading = true
       try {
-        const r = await api.generateReport(this.$route.params.templateId, this.params)
+        const r = await api.generateReport(this.$route.params.templateId, this.params, this.reportAiMode ? 'llm' : 'template')
         this.reportMd = r.markdown
         this.reportOutline = r.outline
       } catch (e) {
@@ -374,26 +387,53 @@ export default {
     drawChart() {
       if (!this.$refs.chartEl) return
       const chart = echarts.init(this.$refs.chartEl)
-      const years = this.currentPlan.yearly.map(y => '第' + y.year + '年')
+      const yd = this.currentPlan.yearly
+      const years = yd.map(y => '第' + y.year + '年')
+      const eq = this.currentPlan.equity
+      const dt = this.currentPlan.deed_tax
+      const cum = (() => {
+        let c = 0
+        return yd.map(y => { c += y.rent_income - y.tax - y.opex - y.finance_cost - y.loan_principal + y.sale_revenue; if (y.year === 1) c -= eq + dt; return Math.round(c * 100) / 100 })
+      })()
       chart.setOption({
-        tooltip: { trigger: 'axis' },
-        legend: { data: ['租金收入', '财务成本', '运营毛利'] },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: { data: ['租金收入','出售收回','运营成本','税费','财务成本','还本支出','投资支出','现金净额'] },
         xAxis: { data: years },
         yAxis: { type: 'value', name: '万元' },
         series: [
-          { name: '租金收入', type: 'bar', data: this.currentPlan.yearly.map(y => y.rent_income),
-            label: { show: true, position: 'top', formatter: (p) => p.value.toFixed(0), fontSize: 10, color: '#666' } },
-          { name: '财务成本', type: 'bar', data: this.currentPlan.yearly.map(y => y.finance_cost),
-            label: { show: true, position: 'top', formatter: (p) => p.value.toFixed(0), fontSize: 10, color: '#666' } },
-          { name: '运营毛利', type: 'line', data: this.currentPlan.yearly.map(y => y.operating_profit),
-            label: { show: true, formatter: (p) => p.value.toFixed(0), fontSize: 10, color: '#666' } },
+          { name: '租金收入', type: 'bar', stack: 'total', data: yd.map(y => y.rent_income),
+            itemStyle: { color: '#67c23a' } },
+          { name: '出售收回', type: 'bar', stack: 'total', data: yd.map(y => y.sale_revenue),
+            itemStyle: { color: '#e6a23c' } },
+          { name: '运营成本', type: 'bar', stack: 'total', data: yd.map(y => -y.opex),
+            itemStyle: { color: '#909399' } },
+          { name: '税费', type: 'bar', stack: 'total', data: yd.map(y => -y.tax),
+            itemStyle: { color: '#d7b806' } },
+          { name: '财务成本', type: 'bar', stack: 'total', data: yd.map(y => -y.finance_cost),
+            itemStyle: { color: '#f56c6c' } },
+          { name: '还本支出', type: 'bar', stack: 'total', data: yd.map(y => -y.loan_principal),
+            itemStyle: { color: '#f0a0a0' } },
+          { name: '投资支出', type: 'bar', stack: 'total', data: yd.map((y,i) => i === 0 ? -(eq + dt) : 0),
+            itemStyle: { color: '#c03620' } },
+          { name: '现金净额', type: 'line', data: cum,
+            lineStyle: { width: 2, color: '#409eff' },
+            itemStyle: { color: '#409eff' },
+            label: { show: true, formatter: (p) => p.value.toFixed(2), fontSize: 10, color: '#409eff', fontWeight: 'bold' },
+            markPoint: {
+              symbol: 'pin', symbolSize: 50,
+              data: [
+                { type: 'min', label: { formatter: (p) => '投资 -' + Math.abs(p.value).toFixed(2), color: '#fff', fontSize: 10 } },
+                { type: 'max', label: { formatter: (p) => '结余 ' + p.value.toFixed(2), color: '#fff', fontSize: 10 } },
+              ]
+            },
+          },
         ]
       })
     },
     fmt(row, col, val) { return val != null ? Number(val).toFixed(2) : '-' },
     getSummaries({ columns, data }) {
       const sums = []
-      const fields = ['rent_income','tax','depreciation','opex','finance_cost','operating_profit']
+      const fields = ['rent_income','tax','depreciation','opex','finance_cost','operating_profit','sale_revenue']
       columns.forEach((col, i) => {
         if (i === 0) { sums[i] = '合计'; return }
         const key = col.property

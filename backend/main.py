@@ -7,7 +7,7 @@ from typing import Optional
 from engines import list_templates, load_template
 from services.calculator import calculate, calculate_all_plans
 from services.storage import save_record, list_records, get_record, delete_record
-from services.report import generate_report as _gen_report, generate_ppt_outline as _gen_outline
+from services.report import generate_report as _gen_report, generate_ppt_outline as _gen_outline, generate_report_llm as _gen_report_llm
 
 app = FastAPI(title="投资测算平台")
 
@@ -34,6 +34,7 @@ class SaveRequest(BaseModel):
 
 class ReportRequest(BaseModel):
     params: dict
+    mode: str = "template"  # template | llm
 
 
 @app.get("/api/templates")
@@ -94,11 +95,17 @@ def api_generate_report(template_id: str, req: ReportRequest):
     """生成分析报告 + PPT 大纲"""
     try:
         params = req.params
-        if not params:
+        if not params or "meta" not in params:
             tpl = load_template(template_id)
-            params = tpl
+            if not params:
+                params = tpl
+            else:
+                params["meta"] = tpl["meta"]
         result = calculate_all_plans(template_id, params)
-        md = _gen_report(params, result)
+        if req.mode == "llm":
+            md = _gen_report_llm(params, result)
+        else:
+            md = _gen_report(params, result)
         outline = _gen_outline(params, result)
         return {"markdown": md, "outline": outline}
     except Exception as e:

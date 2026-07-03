@@ -287,6 +287,9 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
                             config["depreciation"]["decoration_life"],
                             config["depreciation"]["residual_ratio"])
 
+    # 出售收回金额（从 config 读取, 默认=总投资）
+    sale_revenue = config.get("sale", {}).get("revenue", total_investment)
+
     yearly = []
     cumulative_dep = 0
     for year in range(1, plan.holding_years + 1):
@@ -334,11 +337,11 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
             "loan_principal": loan_row["principal"],
             "loan_interest": loan_row["interest"],
             "loan_balance": loan_row["end_balance"],
+            "sale_revenue": sale_revenue if year == plan.holding_years else 0,
+            "sale_profit": 0,
         })
 
-    # 4. 出售 - 严格对齐Excel: 投资出售毛利 = 累计折旧（折旧回血）
-    # Excel: 出售收回=总投资37481, 投资出售毛利=累计折旧
-    sale_revenue = total_investment
+    # 4. 出售毛利 = 累计折旧
     sale_profit = cumulative_dep
 
     # 5. 汇总
@@ -370,6 +373,7 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
         "loan_amount": loan_amount,
         "loan_total_interest": loan["total_interest"],
         "loan_stamp_tax": loan_stamp,
+        "deed_tax": inv["deed_tax"],
         "yearly": yearly,
         "total_rent": total_rent,
         "total_tax": total_tax,
