@@ -1,0 +1,119 @@
+# 以旧换新收购存量房源转保租房 - 测算模板
+# 对应 Excel: 以旧换新收购存量房源转保租房项目估算20260401（调整144套）
+# 单位: 万元 / 元 / ㎡ / 年
+
+meta:
+  id: baozufang
+  name: "保租房收购测算模板"
+  engine: baozufang_v1
+  version: "1.0"
+  description: "以旧换新收购存量房源转保租房，多贷款方案对比，持有期+一次性出售"
+
+# ============ 房源参数 ============
+units:
+  - name: "潍坊"
+    area: 6672              # 建筑面积 ㎡
+    price_per_sqm: 5.4      # 平方均价 万元/㎡
+    units: 144              # 可出租套数
+    avg_unit_price: 253.33  # 预估户均收购价 万元
+    total_acquisition: 36480  # 预估收购总价 万元
+    market_rent: 110        # 市场租金单价 元/㎡/月
+    discount: 0.81          # 低租金青年公寓折扣
+    # 折后租金单价 = 110 * 0.81 = 89.1 元/㎡/月
+    # 折后月租金 = 89.1 * 6672 / 10000 = 59.45 万元/月 → 年 594.5 → 但Excel用 套数*月租金
+    # Excel: 4128.3 元/月/套 → 144套 → 594475元/月 → 年 713.37 → 但 Excel 第2年是606.36
+    # 实际: 4128.3 * 144 * 12 / 10000 = 713.37, 出租率0.85 → 606.36 ✓
+    decoration_cost_per_sqm: 1500  # 装修成本 元/㎡
+    # 装修合计 = 1500 * 6672 / 10000 = 1000.8 ≈ 1001 万元
+
+# ============ 运营参数 ============
+operations:
+  holding_years: 6           # 持有运营年数（3+3方案），5年方案=5
+  sell_at_end: true          # 期末一次性出售
+  rent_adjust_period: 5      # 每5年调整一次租金
+  rent_adjust_rate: 0.05     # 租金涨幅 5%
+  occupancy_schedule:
+    year_1: 0
+    year_2: 0.85
+    year_3: 0.90
+    year_4: 0.95
+    year_5: 0.95
+    year_6: 0.95
+    default: 0.95
+  opex_ratio: 0.10           # 运营成本占收入比 10%
+
+# ============ 折旧摊销 ============
+depreciation:
+  building_life: 30          # 房屋折旧年限
+  decoration_life: 5         # 装修摊销年限
+  # 每年折旧 = (收购总价 + 装修 - 残值) / 年限，Excel简化为 收购总价/30
+  # Excel: 36480/30 = 1216, 但用的是1179.52 → 实际=(36480-1094.4...)? 
+  # 查Excel: 每年折旧 1179.52, 装修摊销 200.2 = 1001/5
+  # 1179.52 * 30 = 35385.6 ≠ 36480, 差额 1094.4 = 契税 → 折旧基数=收购款-契税
+  # ponytail: Excel折旧基数=收购款-契税, 按此实现
+
+# ============ 税费参数 ============
+taxes:
+  deed_tax_rate: 0.03            # 收购交易契税 3%
+  transaction_stamp_rate: 0.0005 # 交易印花税 0.05% (Excel: 36480*0.0005=18.24)
+  loan_stamp_rate: 0.00005       # 借款合同印花税 0.005%
+  vat_rate: 0.0165               # 增值税及附加 1.65%
+  rent_stamp_rate: 0.001         # 租赁印花税 0.1%
+  property_tax_lease: 0.04       # 房产税(从租) 4%
+  property_tax_value: 0.0084     # 房产税(从价) 0.84%
+  land_tax_per_sqm: 6            # 城镇土地使用税 元/㎡
+  land_area: 3336                 # 占地面积 ㎡
+
+# ============ 贷款方案（可配多个，对比） ============
+loan_plans:
+  - id: "3+3"
+    name: "3+3年贷款一次性出售"
+    holding_years: 6
+    rate: 0.0229            # 执行利率 2.29%
+    equity_ratio: 0.64      # 资本金占比 64%
+    # 还款: 前5年还息+少量本金, 第6年一次性还本
+    # Excel: 第2-5年还本 154,203,254,260; 第6年还本 12622
+    repayment_schedule:
+      year_1: 0             # 只付息
+      year_2: 154
+      year_3: 203
+      year_4: 254
+      year_5: 260
+      year_6: 12622         # 剩余一次性
+    base_rate: 0.035
+    discount_rate: 0.0109   # 优惠幅度
+
+  - id: "5year"
+    name: "5年贷款一次性出售"
+    holding_years: 5
+    rate: 0.0241            # 2.41%
+    equity_ratio: 0.73
+    repayment_schedule:
+      year_1: 0
+      year_2: 221
+      year_3: 272
+      year_4: 326
+      year_5: 9301          # 剩余一次性
+    base_rate: 0.035
+    discount_rate: 0.0109
+
+  - id: "1+1+1+1+1"
+    name: "1+1+1+1+1年贷款一次性出售"
+    holding_years: 5
+    rate: 0.0211            # 与3+3方案不同利率档
+    equity_ratio: 0.69
+    repayment_schedule:
+      year_1: 0
+      year_2: 218
+      year_3: 268
+      year_4: 320
+      year_5: -1              # -1 表示剩余全部在本年还清
+    base_rate: 0.035
+    discount_rate: 0.0109
+
+# ============ 出售参数 ============
+sale:
+  # 出售价格 = 收购款 * (1 + 增幅)
+  price_premium: 0.02744    # 2.744%
+  # 出售收回 = 收购总价 + 折旧残值（已折旧部分回血）
+  # Excel: 出售收回资金 = 37481 (总投资), 投资出售毛利 = 累计折旧 6898.6
