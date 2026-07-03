@@ -57,12 +57,15 @@ class LoanPlan:
     id: str
     holding_years: int
     rate: float
-    equity_ratio: float
+    loan_ratio: float
     name: str = ""
     base_rate: float = 0.035
     discount_rate: float = 0.0
-    repayment_schedule: dict = field(default_factory=dict)
-    repayment_type: str = "scheduled"  # scheduled | equal_principal
+    # 还款节奏: custom(手填) | bullet(到期一次还本) | equal_principal(等额本金) | stepped(等额递增)
+    repayment_type: str = "custom"
+    repayment_schedule: dict = field(default_factory=dict)  # custom 模式逐年还本额
+    repayment_start: float = 0.0    # stepped: 第2年还本起始额
+    repayment_increment: float = 0.0  # stepped: 每年增量
 
 
 # ============ 1. 投资成本 ============
@@ -165,6 +168,38 @@ def calc_depreciation(investment: dict, building_life: int, decoration_life: int
 
 # ============ 5. 贷款财务成本 ============
 
+def _build_repayment_schedule(plan: LoanPlan) -> dict:
+    """根据还款类型生成逐年还本额 (year_N: 本金)
+
+    四种节奏:
+      custom         - 手填 repayment_schedule, 末年自动还清剩余
+      bullet         - 中间全0, 末年还清全部本金
+      equal_principal- 每年还本 = 贷款额/年限 (不含第1年, 第1年只付息)
+      stepped        - 第2年起始额起, 每年+increment, 末年还清剩余
+    """
+    n = plan.holding_years
+    if plan.repayment_type == "custom":
+        return plan.repayment_schedule
+
+    if plan.repayment_type == "bullet":
+        # 末年还清, 其余0
+        return {f"year_{i}": 0 for i in range(1, n)}
+
+    if plan.repayment_type == "equal_principal":
+        # 第1年只付息, 2~n年等额还本
+        per = round(1.0 / (n - 1), 6) if n > 1 else 1.0
+        return {f"year_{i}": per for i in range(2, n)}
+
+    if plan.repayment_type == "stepped":
+        # 第2年=start, 第3年=start+increment, ... 末年=-1(还清剩余)
+        sched = {}
+        for i in range(2, n):
+            sched[f"year_{i}"] = round(plan.repayment_start + plan.repayment_increment * (i - 2), 2)
+        return sched
+
+    return plan.repayment_schedule
+
+
 def calc_loan(plan: LoanPlan, loan_amount: float) -> dict:
     """贷款还本付息表
 
@@ -174,15 +209,24 @@ def calc_loan(plan: LoanPlan, loan_amount: float) -> dict:
     - 本年还款 = schedule中的本金 + 利息 (或等本)
     - 本年还本 = schedule中的本金部分
     - 年末余额 = 年初余额 - 本年还本
+
+    schedule 值含义:
+      正数  - 该年还本额 (万元)
+      -1    - 还清剩余全部
+      0~1   - 小数视为贷款额的比例 (custom模式兼容手填比例)
     """
+    schedule = _build_repayment_schedule(plan)
     rows = []
     balance = loan_amount
 
     for year in range(1, plan.holding_years + 1):
-        scheduled = plan.repayment_schedule.get(f"year_{year}", 0)
+        scheduled = schedule.get(f"year_{year}", 0)
         # -1 或末年: 还清剩余
         if scheduled == -1 or year == plan.holding_years:
             principal = round(balance, 2)
+        elif 0 < scheduled < 1:
+            # 小数 = 贷款比例 (兼容手填)
+            principal = round(loan_amount * scheduled, 2)
         else:
             principal = scheduled
 
@@ -228,8 +272,8 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
     adjust_period = ops["rent_adjust_period"]
     adjust_rate = ops["rent_adjust_rate"]
 
-    # 贷款
-    loan_amount = round(total_investment * (1 - plan.equity_ratio), 2)
+    # 贷款 (loan_ratio = 贷款占总投资的比例)
+    loan_amount = round(total_investment * plan.loan_ratio, 2)
     equity = round(total_investment - loan_amount, 2)
     loan = calc_loan(plan, loan_amount)
 
@@ -372,3 +416,18 @@ if __name__ == "__main__":
         print(f"投资出售毛利: {result['sale_profit']}")
         print(f"项目整体毛利: {result['project_gross_profit']}")
         print(f"现金流结余:   {result['cash_flow_total']}")
+
+    # ponytail: 4种还款节奏自检
+    print(f"\n{'='*60}\n还款节奏自检\n{'='*60}")
+    for rtype, sched, start, inc in [
+        ("custom", {"year_2": 154, "year_3": 203, "year_4": 254, "year_5": 260}, 0, 0),
+        ("bullet", {}, 0, 0),
+        ("equal_principal", {}, 0, 0),
+        ("stepped", {}, 154, 50),
+    ]:
+        p = LoanPlan(id=rtype, holding_years=6, rate=0.0229, loan_ratio=0.36,
+                     repayment_type=rtype, repayment_schedule=sched,
+                     repayment_start=start, repayment_increment=inc)
+        loan = calc_loan(p, 13493.09)
+        prins = [f"y{r['year']}:{r['principal']:.0f}" for r in loan["schedule"]]
+        print(f"{rtype:16s} 还本: {', '.join(prins)}  利息合计: {loan['total_interest']:.2f}")

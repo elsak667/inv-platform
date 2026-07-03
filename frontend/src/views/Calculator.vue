@@ -101,19 +101,55 @@
                 <el-row :gutter="6" style="margin-bottom:2px">
                   <el-col :span="5"><div style="font-size:10px;color:#999">方案名称</div></el-col>
                   <el-col :span="5"><div style="font-size:10px;color:#999">年利率</div></el-col>
-                  <el-col :span="5"><div style="font-size:10px;color:#999">首付比例</div></el-col>
+                  <el-col :span="5"><div style="font-size:10px;color:#999">贷款比例</div></el-col>
                   <el-col :span="4"><div style="font-size:10px;color:#999">贷款年限</div></el-col>
                   <el-col :span="5"><div style="font-size:10px;color:#999">自动推算</div></el-col>
                 </el-row>
                 <el-row :gutter="6">
                   <el-col :span="5"><el-input v-model="p.id" placeholder="如：3+3年" size="small" /></el-col>
                   <el-col :span="5"><el-input-number v-model="p.rate" :min="0" :max="1" :step="0.001" :formatter="pct2" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
-                  <el-col :span="5"><el-input-number v-model="p.equity_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
+                  <el-col :span="5"><el-input-number v-model="p.loan_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="4"><el-input-number v-model="p.holding_years" :min="1" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="5">
                     <div style="line-height:28px;font-size:11px;color:#409eff;padding-left:4px">
-                      贷{{ ((1 - p.equity_ratio) * 100).toFixed(0) }}% · 年{{ pct2(p.rate) }}
+                      贷{{ (p.loan_ratio * 100).toFixed(0) }}% · 年{{ pct2(p.rate) }}
                     </div>
+                  </el-col>
+                </el-row>
+                <!-- 还款节奏 -->
+                <el-row :gutter="6" style="margin-top:6px">
+                  <el-col :span="24">
+                    <div style="font-size:10px;color:#999;margin-bottom:2px">还款节奏</div>
+                    <el-radio-group v-model="p.repayment_type" size="small" @change="onRepaymentTypeChange(p)">
+                      <el-radio-button label="custom">手填</el-radio-button>
+                      <el-radio-button label="bullet">到期一次还本</el-radio-button>
+                      <el-radio-button label="equal_principal">等额本金</el-radio-button>
+                      <el-radio-button label="stepped">等额递增</el-radio-button>
+                    </el-radio-group>
+                  </el-col>
+                </el-row>
+                <!-- 手填模式: 逐年还本额 -->
+                <el-row v-if="p.repayment_type === 'custom'" :gutter="6" style="margin-top:6px">
+                  <el-col :span="24">
+                    <div style="font-size:10px;color:#999;margin-bottom:2px">逐年还本额（万元，-1=还清剩余，第1年固定0）</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px">
+                      <div v-for="y in p.holding_years" :key="'rep'+y" style="display:flex;align-items:center;gap:2px">
+                        <span style="font-size:10px;color:#999;width:32px">Y{{y}}</span>
+                        <el-input-number v-model="p.repayment_schedule['year_' + y]" :min="-1" :step="10" size="small" controls-position="right" style="width:90px" :disabled="y === 1 || y === p.holding_years" />
+                      </div>
+                    </div>
+                    <div style="font-size:10px;color:#bbb;margin-top:2px">第1年=0（只付息）· 末年=-1（自动还清剩余）</div>
+                  </el-col>
+                </el-row>
+                <!-- 等额递增: 起始额+增量 -->
+                <el-row v-if="p.repayment_type === 'stepped'" :gutter="6" style="margin-top:6px">
+                  <el-col :span="12">
+                    <div style="font-size:10px;color:#999">第2年还本（万元）</div>
+                    <el-input-number v-model="p.repayment_start" :min="0" :step="10" size="small" controls-position="right" style="width:100%" />
+                  </el-col>
+                  <el-col :span="12">
+                    <div style="font-size:10px;color:#999">每年增量（万元）</div>
+                    <el-input-number v-model="p.repayment_increment" :step="10" size="small" controls-position="right" style="width:100%" />
                   </el-col>
                 </el-row>
               </div>
@@ -249,7 +285,19 @@ export default {
       this.params.units.push({ name: '', units: 1, area: 1000, price_per_sqm: 5, market_rent: 100, discount: 0.8, decoration_cost_per_sqm: 1500 })
     },
     addPlan() {
-      this.params.loan_plans.push({ id: '新方案', holding_years: 5, rate: 0.025, equity_ratio: 0.7, repayment_schedule: {} })
+      this.params.loan_plans.push({ id: '新方案', holding_years: 5, rate: 0.025, loan_ratio: 0.3, repayment_type: 'bullet', repayment_schedule: {}, repayment_start: 0, repayment_increment: 0 })
+    },
+    onRepaymentTypeChange(p) {
+      if (p.repayment_type === 'custom') {
+        if (!p.repayment_schedule || Object.keys(p.repayment_schedule).length === 0) {
+          p.repayment_schedule = { year_1: 0 }
+          for (let y = 2; y < p.holding_years; y++) p.repayment_schedule['year_' + y] = 0
+          p.repayment_schedule['year_' + p.holding_years] = -1
+        }
+      } else if (p.repayment_type === 'stepped') {
+        if (!p.repayment_start) p.repayment_start = 100
+        if (!p.repayment_increment) p.repayment_increment = 50
+      }
     },
     async runCalc() {
       this.loading = true

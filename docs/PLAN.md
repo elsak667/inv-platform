@@ -98,8 +98,12 @@ params:
     fields:
       - {key: id, label: 方案ID, type: text}
       - {key: rate, label: 利率, type: number, step: 0.0001}
-      - {key: equity_ratio, label: 资本金比例, type: number, step: 0.01}
-      - {key: repayment_schedule, label: 还款计划, type: keyvalue}
+      - {key: loan_ratio, label: 贷款比例, type: number, step: 0.01}
+      - {key: holding_years, label: 贷款年限, type: number}
+      - {key: repayment_type, label: 还款节奏, type: select, options: [custom, bullet, equal_principal, stepped]}
+      - {key: repayment_schedule, label: 逐年还本(custom), type: keyvalue}
+      - {key: repayment_start, label: 第2年还本(stepped), type: number}
+      - {key: repayment_increment, label: 每年增量(stepped), type: number}
 
 # ---- 计算引擎挂载点 ----
 # core.py 中注册: @engine("baozufang_v1")

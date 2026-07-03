@@ -70,16 +70,16 @@ loan_plans:
     name: "3+3年贷款一次性出售"
     holding_years: 6
     rate: 0.0229            # 执行利率 2.29%
-    equity_ratio: 0.64      # 资本金占比 64%
-    # 还款: 前5年还息+少量本金, 第6年一次性还本
-    # Excel: 第2-5年还本 154,203,254,260; 第6年还本 12622
+    loan_ratio: 0.36        # 贷款占比 36% (资本金 64%)
+    # 还款节奏: 手填 (第1年只付息, 中间逐年递增, 末年还清剩余)
+    repayment_type: custom
     repayment_schedule:
       year_1: 0             # 只付息
       year_2: 154
       year_3: 203
       year_4: 254
       year_5: 260
-      year_6: 12622         # 剩余一次性
+      year_6: -1            # -1 = 还清剩余
     base_rate: 0.035
     discount_rate: 0.0109   # 优惠幅度
 
@@ -87,13 +87,14 @@ loan_plans:
     name: "5年贷款一次性出售"
     holding_years: 5
     rate: 0.0241            # 2.41%
-    equity_ratio: 0.73
+    loan_ratio: 0.27        # 贷款占比 27% (资本金 73%)
+    repayment_type: custom
     repayment_schedule:
       year_1: 0
       year_2: 221
       year_3: 272
       year_4: 326
-      year_5: 9301          # 剩余一次性
+      year_5: -1            # 还清剩余
     base_rate: 0.035
     discount_rate: 0.0109
 
@@ -101,13 +102,14 @@ loan_plans:
     name: "1+1+1+1+1年贷款一次性出售"
     holding_years: 5
     rate: 0.0211            # 与3+3方案不同利率档
-    equity_ratio: 0.69
+    loan_ratio: 0.31        # 贷款占比 31% (资本金 69%)
+    repayment_type: custom
     repayment_schedule:
       year_1: 0
       year_2: 218
       year_3: 268
       year_4: 320
-      year_5: -1              # -1 表示剩余全部在本年还清
+      year_5: -1            # 还清剩余
     base_rate: 0.035
     discount_rate: 0.0109
 
