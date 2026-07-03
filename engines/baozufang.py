@@ -152,17 +152,19 @@ def calc_operating_tax(rent_income: float, taxes: TaxParams, unit: Unit,
 
 # ============ 4. 折旧摊销 ============
 
-def calc_depreciation(investment: dict, building_life: int, decoration_life: int) -> dict:
+def calc_depreciation(investment: dict, building_life: int, decoration_life: int,
+                      residual_ratio: float = 0) -> dict:
     """年折旧 + 年装修摊销
 
     Excel: 年折旧1179.52=(36480-1094.4)/30, 年摊销200.2=1001/5
     """
-    building_annual = round(investment["depreciation_base"] / building_life, 2)
+    base = investment["depreciation_base"]
+    building_annual = round(base * (1 - residual_ratio) / building_life, 2)
     decoration_annual = round(investment["total_decoration"] / decoration_life, 2)
     return {
-        "building_annual": building_annual,     # 1179.52
-        "decoration_annual": decoration_annual, # 200.2
-        "total_annual": round(building_annual + decoration_annual, 2),  # 1379.72
+        "building_annual": building_annual,
+        "decoration_annual": decoration_annual,
+        "total_annual": round(building_annual + decoration_annual, 2),
     }
 
 
@@ -282,7 +284,8 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
 
     # 2. 折旧
     dep = calc_depreciation(inv, config["depreciation"]["building_life"],
-                            config["depreciation"]["decoration_life"])
+                            config["depreciation"]["decoration_life"],
+                            config["depreciation"]["residual_ratio"])
 
     yearly = []
     cumulative_dep = 0
@@ -300,12 +303,14 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
             tax = calc_operating_tax(rent_total, taxes, units[0], occ,
                                      inv["total_acquisition"], inv["deed_tax"])
 
-        # 折旧摊销：第1年收购+装修未投入使用，不计提；第2年起计提
+        # 折旧摊销：第1年不投产不计提，第2年起分别按各自年限计提
         # ponytail: 会计准则固定资产投入使用次月计提，Excel按第1年0折旧处理
         if year == 1:
             depreciation = 0
         else:
-            depreciation = dep["total_annual"] if year <= config["depreciation"]["building_life"] + 1 else 0
+            b = dep["building_annual"] if year <= config["depreciation"]["building_life"] + 1 else 0
+            d = dep["decoration_annual"] if year <= config["depreciation"]["decoration_life"] + 1 else 0
+            depreciation = round(b + d, 2)
         cumulative_dep += depreciation
 
         # 运营成本（付现10%）

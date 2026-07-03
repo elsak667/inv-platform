@@ -58,7 +58,7 @@
 # templates/baozufang.yaml
 meta:
   id: baozufang
-  name: 保租房收购测算
+  name: 收购项目测算（房管）
   version: 1.0
   engine: baozufang_v1   # 指向 core.py 中的引擎函数
 

@@ -4,7 +4,7 @@
 
 meta:
   id: baozufang
-  name: "保租房收购测算模板"
+  name: "收购项目测算模板（房管）"
   engine: baozufang_v1
   version: "1.0"
   description: "以旧换新收购存量房源转保租房，多贷款方案对比，持有期+一次性出售"
@@ -46,6 +46,7 @@ operations:
 depreciation:
   building_life: 30          # 房屋折旧年限
   decoration_life: 5         # 装修摊销年限
+  residual_ratio: 0          # 残值率（本项目未使用, 默认0）
   # 每年折旧 = (收购总价 + 装修 - 残值) / 年限，Excel简化为 收购总价/30
   # Excel: 36480/30 = 1216, 但用的是1179.52 → 实际=(36480-1094.4...)? 
   # 查Excel: 每年折旧 1179.52, 装修摊销 200.2 = 1001/5

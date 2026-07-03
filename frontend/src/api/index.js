@@ -13,4 +13,6 @@ export default {
     api.get('/records', { params: { template_id: templateId } }).then(r => r.data),
   getRecord: (id) => api.get(`/records/${id}`).then(r => r.data),
   deleteRecord: (id) => api.delete(`/records/${id}`).then(r => r.data),
+  generateReport: (templateId, params) =>
+    api.post(`/report/${templateId}`, { params }).then(r => r.data),
 }

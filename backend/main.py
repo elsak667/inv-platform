@@ -7,6 +7,7 @@ from typing import Optional
 from engines import list_templates, load_template
 from services.calculator import calculate, calculate_all_plans
 from services.storage import save_record, list_records, get_record, delete_record
+from services.report import generate_report as _gen_report, generate_ppt_outline as _gen_outline
 
 app = FastAPI(title="投资测算平台")
 
@@ -29,6 +30,10 @@ class SaveRequest(BaseModel):
     template_id: str
     params: dict
     results: dict
+
+
+class ReportRequest(BaseModel):
+    params: dict
 
 
 @app.get("/api/templates")
@@ -82,3 +87,19 @@ def api_delete_record(rid: int):
     if not delete_record(rid):
         raise HTTPException(404, "记录不存在")
     return {"ok": True}
+
+
+@app.post("/api/report/{template_id}")
+def api_generate_report(template_id: str, req: ReportRequest):
+    """生成分析报告 + PPT 大纲"""
+    try:
+        params = req.params
+        if not params:
+            tpl = load_template(template_id)
+            params = tpl
+        result = calculate_all_plans(template_id, params)
+        md = _gen_report(params, result)
+        outline = _gen_outline(params, result)
+        return {"markdown": md, "outline": outline}
+    except Exception as e:
+        raise HTTPException(400, str(e))

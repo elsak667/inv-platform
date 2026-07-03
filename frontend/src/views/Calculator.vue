@@ -8,9 +8,9 @@
         <el-col :xs="24" :sm="24" :md="10">
           <el-form label-position="top" size="small">
 
-            <!-- ==================== 一、收购物业 ==================== -->
+            <!-- ==================== 一、收购项目 ==================== -->
             <div style="margin-bottom:10px;border:1px solid #e4e7ed;border-radius:6px;padding:10px 12px 6px">
-              <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px">一、收购物业</div>
+              <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px">一、收购项目</div>
               <div v-for="(u, i) in params.units" :key="i"
                 style="margin-bottom:8px;border:1px solid #ebeef5;border-radius:4px;padding:8px;position:relative">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -25,7 +25,7 @@
                   <el-col :span="5"><div style="font-size:10px;color:#999;margin-bottom:1px">市场租金（元/㎡/月）</div><el-input-number v-model="u.market_rent" :min="0" controls-position="right" style="width:100%" size="small" /></el-col>
                 </el-row>
                 <el-row :gutter="6">
-                  <el-col :span="6"><div style="font-size:10px;color:#999;margin-bottom:1px">保租房折扣</div>
+                  <el-col :span="6"><div style="font-size:10px;color:#999;margin-bottom:1px">租金折扣</div>
                     <el-input-number v-model="u.discount" :min="0" :max="1" :step="0.01"
                       :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" />
                   </el-col>
@@ -90,31 +90,35 @@
               </el-row>
             </div>
 
-            <!-- ==================== 四、融资方案 ==================== -->
+            <!-- ==================== 四、会计估计 ==================== -->
             <div style="margin-bottom:10px;border:1px solid #e4e7ed;border-radius:6px;padding:10px 12px 6px">
-              <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px">四、融资方案</div>
+              <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px">四、会计估计</div>
+              <el-row :gutter="6" style="margin-bottom:6px">
+                <el-col :span="8"><div style="font-size:11px;color:#606266;margin-bottom:1px">房屋折旧年限</div><el-input-number v-model="params.depreciation.building_life" :min="1" :max="60" controls-position="right" style="width:100%" size="small" /></el-col>
+                <el-col :span="6"><div style="font-size:11px;color:#606266;margin-bottom:1px">残值率</div><el-input-number v-model="params.depreciation.residual_ratio" :min="0" :max="0.5" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
+                <el-col :span="8"><div style="font-size:11px;color:#606266;margin-bottom:1px">装修摊销年限</div><el-input-number v-model="params.depreciation.decoration_life" :min="1" :max="30" controls-position="right" style="width:100%" size="small" /></el-col>
+              </el-row>
+            </div>
+
+            <!-- ==================== 五、融资方案 ==================== -->
+            <div style="margin-bottom:10px;border:1px solid #e4e7ed;border-radius:6px;padding:10px 12px 6px">
+              <div style="font-size:13px;font-weight:600;color:#303133;margin-bottom:8px">五、融资方案</div>
               <div v-for="(p, i) in params.loan_plans" :key="i" style="margin-bottom:8px;border:1px solid #ebeef5;border-radius:4px;padding:8px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                   <span style="font-size:12px;font-weight:500;color:#606266">方案 {{ i+1 }}：{{ p.id || '(未命名)' }}</span>
                   <el-button type="danger" link size="small" @click="params.loan_plans.splice(i,1)">删除</el-button>
                 </div>
                 <el-row :gutter="6" style="margin-bottom:2px">
-                  <el-col :span="5"><div style="font-size:10px;color:#999">方案名称</div></el-col>
-                  <el-col :span="5"><div style="font-size:10px;color:#999">年利率</div></el-col>
-                  <el-col :span="5"><div style="font-size:10px;color:#999">贷款比例</div></el-col>
-                  <el-col :span="4"><div style="font-size:10px;color:#999">贷款年限</div></el-col>
-                  <el-col :span="5"><div style="font-size:10px;color:#999">自动推算</div></el-col>
+                  <el-col :span="6"><div style="font-size:10px;color:#999">方案名称</div></el-col>
+                  <el-col :span="6"><div style="font-size:10px;color:#999">年利率</div></el-col>
+                  <el-col :span="6"><div style="font-size:10px;color:#999">贷款比例</div></el-col>
+                  <el-col :span="6"><div style="font-size:10px;color:#999">贷款年限</div></el-col>
                 </el-row>
                 <el-row :gutter="6">
-                  <el-col :span="5"><el-input v-model="p.id" placeholder="如：3+3年" size="small" /></el-col>
-                  <el-col :span="5"><el-input-number v-model="p.rate" :min="0" :max="1" :step="0.001" :formatter="pct2" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
-                  <el-col :span="5"><el-input-number v-model="p.loan_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
-                  <el-col :span="4"><el-input-number v-model="p.holding_years" :min="1" controls-position="right" style="width:100%" size="small" /></el-col>
-                  <el-col :span="5">
-                    <div style="line-height:28px;font-size:11px;color:#409eff;padding-left:4px">
-                      贷{{ (p.loan_ratio * 100).toFixed(0) }}% · 年{{ pct2(p.rate) }}
-                    </div>
-                  </el-col>
+                  <el-col :span="6"><el-input v-model="p.id" placeholder="如：3+3年" size="small" /></el-col>
+                  <el-col :span="6"><el-input-number v-model="p.rate" :min="0" :max="1" :step="0.001" :formatter="pct2" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
+                  <el-col :span="6"><el-input-number v-model="p.loan_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
+                  <el-col :span="6"><el-input-number v-model="p.holding_years" :min="1" @change="onHoldingYearsChange(p)" controls-position="right" style="width:100%" size="small" /></el-col>
                 </el-row>
                 <!-- 还款节奏 -->
                 <el-row :gutter="6" style="margin-top:6px">
@@ -131,14 +135,14 @@
                 <!-- 手填模式: 逐年还本额 -->
                 <el-row v-if="p.repayment_type === 'custom'" :gutter="6" style="margin-top:6px">
                   <el-col :span="24">
-                    <div style="font-size:10px;color:#999;margin-bottom:2px">逐年还本额（万元，-1=还清剩余，第1年固定0）</div>
+                    <div style="font-size:10px;color:#999;margin-bottom:2px">逐年还本额（万元，-1=还清剩余，第1年默认0只付息）</div>
                     <div style="display:flex;flex-wrap:wrap;gap:4px">
                       <div v-for="y in p.holding_years" :key="'rep'+y" style="display:flex;align-items:center;gap:2px">
                         <span style="font-size:10px;color:#999;width:32px">Y{{y}}</span>
-                        <el-input-number v-model="p.repayment_schedule['year_' + y]" :min="-1" :step="10" size="small" controls-position="right" style="width:90px" :disabled="y === 1 || y === p.holding_years" />
+                        <el-input-number v-model="p.repayment_schedule['year_' + y]" :min="-1" :step="10" size="small" controls-position="right" style="width:90px" />
                       </div>
                     </div>
-                    <div style="font-size:10px;color:#bbb;margin-top:2px">第1年=0（只付息）· 末年=-1（自动还清剩余）</div>
+                    <div style="font-size:10px;color:#bbb;margin-top:2px">第1年默认0（只付息）· 末年默认-1（还清剩余）· 均可修改</div>
                   </el-col>
                 </el-row>
                 <!-- 等额递增: 起始额+增量 -->
@@ -218,7 +222,7 @@
                   </el-select>
                 </div>
               </template>
-              <el-table :data="currentPlan.yearly" size="small" border>
+              <el-table :data="currentPlan.yearly" size="small" border show-summary :summary-method="getSummaries">
                 <el-table-column prop="year" label="年份" width="60" align="center" />
                 <el-table-column prop="rent_income" label="租金收入" :formatter="fmt" align="right" />
                 <el-table-column prop="tax" label="税费" :formatter="fmt" align="right" />
@@ -227,6 +231,21 @@
                 <el-table-column prop="finance_cost" label="财务成本" :formatter="fmt" align="right" />
                 <el-table-column prop="operating_profit" label="运营毛利" :formatter="fmt" align="right" />
               </el-table>
+            </el-card>
+
+            <!-- 分析报告 -->
+            <el-card shadow="never" style="margin-bottom:16px">
+              <template #header>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="font-weight:600;font-size:14px">分析报告</span>
+                  <el-button type="primary" size="small" @click="doGenerateReport" :loading="reportLoading">生成报告</el-button>
+                  <el-button v-if="reportMd" size="small" @click="copyReport">复制</el-button>
+                  <el-button v-if="reportMd" size="small" @click="downloadReport">下载</el-button>
+                  <el-button v-if="reportOutline" size="small" @click="downloadOutline">下载PPT大纲</el-button>
+                </div>
+              </template>
+              <div v-if="reportMd" style="max-height:600px;overflow:auto;background:#f8f9fa;border-radius:4px;padding:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:monospace">{{ reportMd }}</div>
+              <div v-if="!reportMd" style="color:#999;font-size:13px;text-align:center;padding:20px">点击"生成报告"按钮，基于当前测算结果自动生成分析报告和PPT大纲。</div>
             </el-card>
 
             <!-- 保存 -->
@@ -257,6 +276,9 @@ export default {
       loadingTemplate: true,
       selectedPlan: '',
       saveName: '',
+      reportLoading: false,
+      reportMd: '',
+      reportOutline: '',
     }
   },
   computed: {
@@ -290,13 +312,26 @@ export default {
     onRepaymentTypeChange(p) {
       if (p.repayment_type === 'custom') {
         if (!p.repayment_schedule || Object.keys(p.repayment_schedule).length === 0) {
-          p.repayment_schedule = { year_1: 0 }
-          for (let y = 2; y < p.holding_years; y++) p.repayment_schedule['year_' + y] = 0
-          p.repayment_schedule['year_' + p.holding_years] = -1
+          p.repayment_schedule = {}
+          for (let y = 1; y <= p.holding_years; y++) {
+            p.repayment_schedule['year_' + y] = (y === 1) ? 0 : (y === p.holding_years ? -1 : 0)
+          }
         }
       } else if (p.repayment_type === 'stepped') {
         if (!p.repayment_start) p.repayment_start = 100
         if (!p.repayment_increment) p.repayment_increment = 50
+      }
+    },
+    onHoldingYearsChange(p) {
+      // 贷款年限变了, 末年始终=-1(还清剩余), 保留已填年份的值
+      if (p.repayment_type === 'custom') {
+        const old = { ...(p.repayment_schedule || {}) }
+        p.repayment_schedule = {}
+        for (let y = 1; y <= p.holding_years; y++) {
+          if (y === p.holding_years) p.repayment_schedule['year_' + y] = -1
+          else if (old['year_' + y] != null) p.repayment_schedule['year_' + y] = old['year_' + y]
+          else p.repayment_schedule['year_' + y] = (y === 1) ? 0 : 0
+        }
       }
     },
     async runCalc() {
@@ -309,6 +344,32 @@ export default {
         this.$message.error(e.response?.data?.detail || e.message)
       }
       this.loading = false
+    },
+    async doGenerateReport() {
+      this.reportLoading = true
+      try {
+        const r = await api.generateReport(this.$route.params.templateId, this.params)
+        this.reportMd = r.markdown
+        this.reportOutline = r.outline
+      } catch (e) {
+        this.$message.error('生成报告失败: ' + (e.response?.data?.detail || e.message))
+      }
+      this.reportLoading = false
+    },
+    copyReport() {
+      navigator.clipboard.writeText(this.reportMd).then(() => this.$message.success('已复制'))
+    },
+    downloadReport() {
+      const blob = new Blob([this.reportMd], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = '分析报告.md'; a.click()
+      URL.revokeObjectURL(url)
+    },
+    downloadOutline() {
+      const blob = new Blob([this.reportOutline], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'PPT大纲.md'; a.click()
+      URL.revokeObjectURL(url)
     },
     drawChart() {
       if (!this.$refs.chartEl) return
@@ -330,6 +391,20 @@ export default {
       })
     },
     fmt(row, col, val) { return val != null ? Number(val).toFixed(2) : '-' },
+    getSummaries({ columns, data }) {
+      const sums = []
+      const fields = ['rent_income','tax','depreciation','opex','finance_cost','operating_profit']
+      columns.forEach((col, i) => {
+        if (i === 0) { sums[i] = '合计'; return }
+        const key = col.property
+        if (fields.includes(key)) {
+          sums[i] = data.reduce((s, r) => s + (Number(r[key]) || 0), 0).toFixed(2)
+        } else {
+          sums[i] = ''
+        }
+      })
+      return sums
+    },
     async save() {
       if (!this.saveName) { this.$message.warning('请输入方案名称'); return }
       await api.saveRecord(this.saveName, this.$route.params.templateId, this.params, this.result)
