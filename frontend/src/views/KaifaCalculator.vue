@@ -70,7 +70,7 @@
       </div>
 
       <div class="result-panel" v-if="result">
-        <el-tabs v-model="activeTab" class="result-tabs">
+        <el-tabs v-model="activeTab" class="result-tabs" @tab-change="redrawOnTab">
           <!-- Tab 1: 总览 -->
           <el-tab-pane label="总览" name="overview">
             <div class="metric-grid-4">
@@ -243,10 +243,20 @@ export default {
       return sums
     },
     drawAllCharts() {
+      setTimeout(() => {
+        if (this.activeTab === 'overview') {
+          this.drawCostPie()
+          this.drawRadar()
+        }
+        if (this.activeTab === 'cashflow') {
+          this.drawCfChart()
+        }
+      }, 200)
+    },
+    redrawOnTab() {
       this.$nextTick(() => {
-        this.drawCfChart()
-        this.drawCostPie()
-        this.drawRadar()
+        if (this.activeTab === 'overview') { this.drawCostPie(); this.drawRadar() }
+        if (this.activeTab === 'cashflow') { this.drawCfChart() }
       })
     },
     drawCfChart() {
