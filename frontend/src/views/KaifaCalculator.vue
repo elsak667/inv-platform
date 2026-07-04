@@ -280,12 +280,16 @@ export default {
         name: '权益现金流', type: 'line', data: equity,
         smooth: true, lineStyle: { width: 2 }, itemStyle: { color: '#10b981' },
       })
+      const fmtWan = v => {
+        if (Math.abs(v) >= 10000) return (v/10000).toFixed(1) + '亿'
+        return v.toFixed(0) + '万'
+      }
       this.cfChart.setOption({
-        tooltip: { trigger: 'axis', valueFormatter: v => v != null ? `${v.toFixed(0)}万` : '' },
-        legend: { show: true, bottom: 0 },
-        grid: { left: 50, right: 16, top: 16, bottom: 36 },
-        xAxis: { type: 'category', data: months, axisLabel: { rotate: 45, fontSize: 9, interval: 2 } },
-        yAxis: { type: 'value', axisLabel: { formatter: v => `${v}万` } },
+        tooltip: { trigger: 'axis', valueFormatter: v => v != null ? fmtWan(v) : '' },
+        legend: { show: true, bottom: 0, textStyle: { fontSize: 11 } },
+        grid: { left: 64, right: 24, top: 24, bottom: 60 },
+        xAxis: { type: 'category', data: months, axisLabel: { rotate: 45, fontSize: 10, interval: 1 } },
+        yAxis: { type: 'value', axisLabel: { formatter: v => fmtWan(v) } },
         series,
       })
       this.cfChart.resize()
