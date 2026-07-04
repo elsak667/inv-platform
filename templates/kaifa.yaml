@@ -87,7 +87,7 @@ taxes:
   conversion_rate: 0.85           # 进项折算率(人工等不可抵部分)
   invoice_rate: 1.0               # 专票取得率
   # --- 附加税 ---
-  city_maintenance_rate: 0.05     # 城建税 5%(视城市等级7/5/1)
+  city_maintenance_rate: 0.07     # 城建税 7%(上海)
   edu_surcharge_rate: 0.03        # 教育费附加 3%
   local_edu_surcharge_rate: 0.02  # 地方教育附加 2%
   # --- 土地增值税(预征) ---
