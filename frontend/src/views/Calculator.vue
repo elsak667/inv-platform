@@ -244,38 +244,64 @@
               </div>
 
               <!-- 逐年明细表 -->
-              <div class="section-card" style="margin-bottom:16px">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-                  <div class="section-title" style="margin-bottom:0">逐年明细</div>
+              <div class="section-card table-card" style="margin-bottom:16px">
+                <div class="card-header-bar">
+                  <div class="card-header-title">
+                    <span class="card-header-icon">📊</span>
+                    <span>逐年明细</span>
+                  </div>
                   <el-select v-model="selectedPlan" size="small" style="width:200px" @change="drawChart">
                     <el-option v-for="p in result.plans" :key="p.plan" :label="p.plan" :value="p.plan" />
                   </el-select>
                 </div>
-                <el-table :data="currentPlan.yearly" size="small" border show-summary :summary-method="getSummaries" style="width:100%">
-                  <el-table-column prop="year" label="年份" width="60" align="center" />
+                <el-table :data="currentPlan.yearly" size="small" show-summary :summary-method="getSummaries"
+                  :header-cell-style="{ background:'#f8fafc', color:'#334155', fontWeight:600 }"
+                  :cell-style="{ padding:'8px 0' }"
+                  style="width:100%">
+                  <el-table-column prop="year" label="年份" width="60" align="center">
+                    <template #default="{ row }">
+                      <span style="font-weight:600;color:#1a56db">Y{{ row.year }}</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column prop="rent_income" label="租金收入" :formatter="fmt" align="right" />
                   <el-table-column prop="tax" label="税费" :formatter="fmt" align="right" />
                   <el-table-column prop="depreciation" label="折旧" :formatter="fmt" align="right" />
                   <el-table-column prop="opex" label="运营成本" :formatter="fmt" align="right" />
                   <el-table-column prop="finance_cost" label="财务成本" :formatter="fmt" align="right" />
-                  <el-table-column prop="operating_profit" label="运营毛利" :formatter="fmt" align="right" />
+                  <el-table-column prop="operating_profit" label="运营毛利" :formatter="fmt" align="right">
+                    <template #default="{ row }">
+                      <span :style="{ color: row.operating_profit >= 0 ? '#10b981' : '#ef4444', fontWeight:600 }">
+                        {{ fmt(null,null,row.operating_profit) }}
+                      </span>
+                    </template>
+                  </el-table-column>
                   <el-table-column prop="sale_revenue" label="出售收回" :formatter="fmt" align="right" />
                   <el-table-column prop="loan_balance" label="贷款余额" :formatter="fmt" align="right" />
                 </el-table>
               </div>
 
               <!-- 分析报告 -->
-              <div class="section-card purple" style="margin-bottom:16px">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-                  <div class="section-title" style="margin-bottom:0">分析报告</div>
-                  <el-switch v-model="reportAiMode" active-text="AI增强" inactive-text="标准" size="small" style="margin-right:4px" />
-                  <el-button type="primary" size="small" @click="doGenerateReport" :loading="reportLoading">生成报告</el-button>
-                  <el-button v-if="reportMd" size="small" @click="copyReport">复制</el-button>
-                  <el-button v-if="reportMd" size="small" @click="downloadReport">下载</el-button>
-                  <el-button v-if="reportOutline" size="small" @click="downloadOutline">下载PPT大纲</el-button>
+              <div class="section-card purple report-card" style="margin-bottom:16px">
+                <div class="card-header-bar">
+                  <div class="card-header-title">
+                    <span class="card-header-icon">📄</span>
+                    <span>分析报告</span>
+                  </div>
+                  <div class="report-actions">
+                    <el-switch v-model="reportAiMode" active-text="AI增强" inactive-text="标准" size="small" />
+                    <el-button type="primary" size="small" @click="doGenerateReport" :loading="reportLoading">
+                      <span style="display:inline-flex;align-items:center;gap:4px">
+                        <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        生成报告
+                      </span>
+                    </el-button>
+                    <el-button v-if="reportMd" size="small" @click="copyReport">复制</el-button>
+                    <el-button v-if="reportMd" size="small" @click="downloadReport">下载</el-button>
+                    <el-button v-if="reportOutline" size="small" @click="downloadOutline">PPT大纲</el-button>
+                  </div>
                 </div>
                 <div v-if="reportMd">
-                  <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+                  <div class="report-view-toggle">
                     <el-radio-group v-model="reportView" size="small">
                       <el-radio-button label="rendered">预览</el-radio-button>
                       <el-radio-button label="raw">源码</el-radio-button>
@@ -284,14 +310,20 @@
                   <div v-if="reportView === 'raw'" class="report-content">{{ reportMd }}</div>
                   <div v-else class="report-rendered" v-html="reportRendered"></div>
                 </div>
-                <div v-if="!reportMd" class="report-empty">点击"生成报告"按钮，基于当前测算结果自动生成分析报告和PPT大纲。</div>
+                <div v-if="!reportMd" class="report-empty">
+                  <svg style="width:40px;height:40px;color:#cbd5e1;margin-bottom:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <p>点击"生成报告"按钮，基于当前测算结果自动生成分析报告和PPT大纲</p>
+                </div>
               </div>
 
               <!-- 保存 -->
-              <div class="section-card" style="margin-bottom:24px">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <el-input v-model="saveName" placeholder="给这个方案取个名字" style="width:240px" size="small" />
-                  <el-button type="success" @click="save" size="small">保存方案</el-button>
+              <div class="section-card save-card" style="margin-bottom:24px">
+                <div class="save-row">
+                  <div class="save-icon-wrap">
+                    <svg style="width:18px;height:18px;color:#fff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  </div>
+                  <el-input v-model="saveName" placeholder="给这个方案取个名字" style="flex:1;max-width:280px" size="small" />
+                  <el-button type="primary" @click="save" size="small" class="btn-primary">保存方案</el-button>
                 </div>
               </div>
             </div>
@@ -793,5 +825,84 @@ export default {
   width: 8px;
   height: 8px;
   border-radius: 2px;
+}
+
+/* === 逐年明细表卡片 === */
+.table-card {
+  padding: 16px 20px;
+}
+
+.card-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.card-header-icon {
+  font-size: 16px;
+}
+
+/* === 分析报告卡片 === */
+.report-card {
+  padding: 16px 20px;
+}
+
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-view-toggle {
+  margin-bottom: 12px;
+}
+
+.report-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
+
+.report-empty p {
+  margin: 0;
+}
+
+/* === 保存卡片 === */
+.save-card {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-left-color: var(--primary);
+}
+
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-icon-wrap {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(26,86,219,0.2);
 }
 </style>
