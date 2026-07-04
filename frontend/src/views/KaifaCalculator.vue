@@ -150,7 +150,7 @@ export default {
   },
   async mounted() {
     try {
-      this.cfg = await api.getTemplate(this.$route.params.templateId)
+      this.cfg = await api.getTemplate('kaifa')
       const { meta, ...rest } = this.cfg; this.p = JSON.parse(JSON.stringify(rest))
     } catch (e) { this.$message.error(String(e)) }
     this.loading = false
@@ -195,7 +195,7 @@ export default {
       this.running = true
       try {
         const params = { ...this.p, meta: this.cfg.meta }
-        this.result = await api.calculate(this.$route.params.templateId, params)
+        this.result = await api.calculate('kaifa', params)
         this.drawCfChart()
       } catch (e) { this.$message.error(e.response?.data?.detail || e.message) }
       this.running = false
