@@ -7,12 +7,14 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import TemplateList from './views/TemplateList.vue'
 import Calculator from './views/Calculator.vue'
+import KaifaCalculator from './views/KaifaCalculator.vue'
 import Records from './views/Records.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: TemplateList },
+    { path: '/calc/kaifa', component: KaifaCalculator },
     { path: '/calc/:templateId', component: Calculator },
     { path: '/records', component: Records },
   ]

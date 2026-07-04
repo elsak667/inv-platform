@@ -1,0 +1,124 @@
+# 房地产开发项目全成本测算模板
+# 流水线: 土地成本 → 建安 → 三费 → 融资 → 销售 → 税金 → 现金流 → 盈利
+# 单位: 万元 / 元 / ㎡ / 月
+
+meta:
+  id: kaifa
+  name: "房地产开发项目全成本测算"
+  engine: kaifa_v1
+  version: "1.0"
+  description: "完整流水线：土地→建安→三费→融资→销售→税金→现金流→盈利"
+
+project:
+  name: "示例项目"
+  city: "上海"
+  city_tier: 1
+
+land:
+  site_area: 50000           # 总用地面积 ㎡
+  construction_area: 45000   # 建设用地面积 ㎡
+  floor_area_ratio: 2.0      # 容积率
+  total_gfa: 90000           # 总建筑面积 ㎡ (自动 = 用地面积×容积率, 可覆盖)
+  premium: 54000             # 土地出让金 万元
+  deed_tax_rate: 0.03        # 契税税率
+  city_support_fee_per_sqm: 60   # 城建配套费 元/㎡(地上)
+  other_land_cost: 0         # 其他土地费用 万元
+
+products:
+  - name: "高层住宅"
+    type: "住宅"
+    gfa: 65000
+    saleable_area: 62000
+    unit_price: 25000
+    unit_price_ex_vat: 22936
+    const_cost_per_sqm: 4500
+    decoration: "毛坯"
+    presale_month_offset: 0        # 开盘即售
+
+  - name: "沿街商业"
+    type: "商业"
+    gfa: 5000
+    saleable_area: 5000
+    unit_price: 35000
+    unit_price_ex_vat: 32110
+    const_cost_per_sqm: 4000
+    decoration: "毛坯"
+    presale_month_offset: 6        # 住宅售半年后开
+
+  - name: "地下车库"
+    type: "车库"
+    gfa: 20000
+    saleable_area: 0
+    parking_spots: 600
+    parking_price: 150000
+    parking_price_ex_vat: 137615
+    const_cost_per_sqm: 3000
+    decoration: "毛坯"
+    presale_month_offset: 12       # 接近竣备时卖
+
+fees:
+  management_fee_rate: 0.03       # 管理费率(占含税销售)
+  marketing_fee_rate: 0.025       # 营销费率
+  agency_fee_rate: 0              # 代建费率
+  preliminary_rate: 0.03          # 前期费用率(占建安)
+  contingency_rate: 0.05          # 不可预见费率(占建安+前期)
+  indirect_dev_rate: 0.02         # 开发间接费率(占直接成本)
+
+financing:
+  equity_ratio: 0.35              # 自有资金比例
+  dev_loan_interest_rate: 0.05    # 开发贷年利率
+  dev_loan_term_months: 24        # 开发贷期限 月
+  dev_loan_to_value: 0.50         # 开发贷占总投资比上限
+  bridge_loan_ratio: 0.30         # 前融占土地款比例
+  bridge_loan_rate: 0.08          # 前融年利率
+  bridge_loan_term: 12            # 前融期限月
+
+sales:
+  sell_period_months: 18          # 去化周期(开盘至清盘)
+  front_payment_ratio: 0.30       # 首付比例
+  mortgage_ratio: 0.70            # 按揭比例
+  mortgage_release_delay: 3       # 按揭放款滞后月数
+
+taxes:
+  # --- 增值税 ---
+  vat_rate: 0.09                  # 不动产税率 9%
+  vat_rate_services: 0.06         # 服务业税率 6%
+  vat_prepay_rate: 0.03           # 预征率 3%
+  conversion_rate: 0.85           # 进项折算率(人工等不可抵部分)
+  invoice_rate: 1.0               # 专票取得率
+  # --- 附加税 ---
+  city_maintenance_rate: 0.05     # 城建税 5%(视城市等级7/5/1)
+  edu_surcharge_rate: 0.03        # 教育费附加 3%
+  local_edu_surcharge_rate: 0.02  # 地方教育附加 2%
+  # --- 土地增值税(预征) ---
+  land_tax_prepay_rate: 0.02      # 土增预征率(住宅)
+  land_tax_prepay_commercial: 0.03  # 土增预征率(商业)
+  # --- 其他 ---
+  income_tax_rate: 0.25           # 所得税率 25%
+  stamp_tax_rate: 0.0005          # 印花税率 0.05%
+
+timeline:
+  land_paid: 0                    # 支付土地款(拿地月)
+  const_start_month: 3            # 开工(相对拿地)
+  presale_month: 6                # 取得预售证/开盘
+  structure_topped_month: 12      # 封顶
+  completion_month: 24            # 竣备
+  delivery_month: 27              # 交付
+
+payment_schedule:
+  # 各阶段支付比例
+  construction:
+    mobilization: 0.15            # 开工款
+    progress: 0.50                # 进度款(结构封顶前分期支付)
+    completion: 0.25              # 竣工款
+    retention: 0.10               # 质保金(交付后)
+  # 支付节奏(累计比例)
+  const_pay_timing:
+    - month_offset: 3
+      cumulative: 0.15
+    - month_offset: 12
+      cumulative: 0.65
+    - month_offset: 24
+      cumulative: 0.90
+    - month_offset: 27
+      cumulative: 1.00

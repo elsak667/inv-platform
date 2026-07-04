@@ -43,3 +43,4 @@ def list_templates() -> list[dict]:
 
 
 from . import baozufang  # noqa: E402,F401  触发 @engine 注册
+from . import kaifa  # noqa: E402,F401
