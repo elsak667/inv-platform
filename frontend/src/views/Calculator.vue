@@ -11,11 +11,10 @@
 
               <!-- 一、收购项目 -->
               <div class="section-card">
-                <div class="section-title">一、收购项目</div>
-                <div v-for="(u, i) in params.units" :key="i"
-                  style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:8px;padding:10px;position:relative">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                    <span style="font-weight:600;font-size:13px;color:#1e293b">物业 {{ i+1 }}</span>
+                <div class="section-title"><span class="num-badge">1</span>收购项目</div>
+                <div v-for="(u, i) in params.units" :key="i" class="unit-block">
+                  <div class="unit-header">
+                    <span class="unit-name">物业 {{ i+1 }}</span>
                     <el-button type="danger" link size="small" @click="params.units.splice(i,1)">删除</el-button>
                   </div>
                   <el-row :gutter="8">
@@ -41,7 +40,7 @@
                     </el-col>
                   </el-row>
                 </div>
-                <el-button type="primary" link size="small" @click="addUnit" style="margin-bottom:2px">+ 新增物业</el-button>
+                <el-button type="primary" link size="small" @click="addUnit" class="add-btn">+ 新增物业</el-button>
                 <el-row :gutter="8" style="margin-top:8px">
                   <el-col :span="8" :offset="16"><div class="field-label">出售收回总额（万元）</div><el-input-number v-model="params.sale.revenue" :min="0" controls-position="right" style="width:100%" size="small" /></el-col>
                 </el-row>
@@ -49,13 +48,13 @@
 
               <!-- 二、经营预期 -->
               <div class="section-card green">
-                <div class="section-title">二、经营预期</div>
+                <div class="section-title"><span class="num-badge">2</span>经营预期</div>
                 <el-row :gutter="8" style="margin-bottom:8px">
                   <el-col :span="8"><div class="field-label">运营成本占比</div><el-input-number v-model="params.operations.opex_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="8"><div class="field-label">每次涨幅</div><el-input-number v-model="params.operations.rent_adjust_rate" :min="0" :max="1" :step="0.01" :formatter="pct1" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="8"><div class="field-label">调租间隔（年）</div><el-input-number v-model="params.operations.rent_adjust_period" :min="1" :max="30" controls-position="right" style="width:100%" size="small" /></el-col>
                 </el-row>
-                <div style="margin-bottom:4px">
+                <div>
                   <div class="field-label" style="margin-bottom:4px">出租率</div>
                   <el-row :gutter="8" style="margin-bottom:2px">
                     <el-col :span="4"><div class="field-label-sub" style="text-align:center">第1年</div></el-col>
@@ -74,7 +73,7 @@
 
               <!-- 三、税费设定 -->
               <div class="section-card orange">
-                <div class="section-title">三、税费设定</div>
+                <div class="section-title"><span class="num-badge">3</span>税费设定</div>
                 <el-row :gutter="8" style="margin-bottom:8px">
                   <el-col :span="6"><div class="field-label">契税</div><el-input-number v-model="params.taxes.deed_tax_rate" :min="0" :max="1" :step="0.001" :formatter="pct2" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="6"><div class="field-label">交易印花税</div><el-input-number v-model="params.taxes.transaction_stamp_rate" :min="0" :max="1" :step="0.0001" :formatter="pct2" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
@@ -92,7 +91,7 @@
 
               <!-- 四、会计估计 -->
               <div class="section-card purple">
-                <div class="section-title">四、会计估计</div>
+                <div class="section-title"><span class="num-badge">4</span>会计估计</div>
                 <el-row :gutter="8">
                   <el-col :span="8"><div class="field-label">房屋折旧年限</div><el-input-number v-model="params.depreciation.building_life" :min="1" :max="60" controls-position="right" style="width:100%" size="small" /></el-col>
                   <el-col :span="6"><div class="field-label">残值率</div><el-input-number v-model="params.depreciation.residual_ratio" :min="0" :max="0.5" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
@@ -102,10 +101,10 @@
 
               <!-- 五、融资方案 -->
               <div class="section-card red">
-                <div class="section-title">五、融资方案</div>
-                <div v-for="(p, i) in params.loan_plans" :key="i" style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:8px;padding:10px">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:13px;font-weight:600;color:#1e293b">方案 {{ i+1 }}：{{ p.id || '(未命名)' }}</span>
+                <div class="section-title"><span class="num-badge">5</span>融资方案</div>
+                <div v-for="(p, i) in params.loan_plans" :key="i" class="unit-block">
+                  <div class="unit-header">
+                    <span class="unit-name">方案 {{ i+1 }}：{{ p.id || '(未命名)' }}</span>
                     <el-button type="danger" link size="small" @click="params.loan_plans.splice(i,1)">删除</el-button>
                   </div>
                   <el-row :gutter="8" style="margin-bottom:2px">
@@ -120,7 +119,6 @@
                     <el-col :span="6"><el-input-number v-model="p.loan_ratio" :min="0" :max="1" :step="0.01" :formatter="pct0" :parser="unpct" controls-position="right" style="width:100%" size="small" /></el-col>
                     <el-col :span="6"><el-input-number v-model="p.holding_years" :min="1" @change="onHoldingYearsChange(p)" controls-position="right" style="width:100%" size="small" /></el-col>
                   </el-row>
-                  <!-- 还款节奏 -->
                   <el-row :gutter="8" style="margin-top:8px">
                     <el-col :span="24">
                       <div class="field-label" style="margin-bottom:4px">还款节奏</div>
@@ -132,7 +130,6 @@
                       </el-radio-group>
                     </el-col>
                   </el-row>
-                  <!-- 手填模式 -->
                   <el-row v-if="p.repayment_type === 'custom'" :gutter="8" style="margin-top:8px">
                     <el-col :span="24">
                       <div class="field-label" style="margin-bottom:4px">逐年还本额（万元，-1=还清剩余，第1年默认0只付息）</div>
@@ -145,7 +142,6 @@
                       <div style="font-size:10px;color:#94a3b8;margin-top:2px">第1年默认0（只付息）· 末年默认-1（还清剩余）· 均可修改</div>
                     </el-col>
                   </el-row>
-                  <!-- 等额递增 -->
                   <el-row v-if="p.repayment_type === 'stepped'" :gutter="8" style="margin-top:8px">
                     <el-col :span="12">
                       <div class="field-label">第2年还本（万元）</div>
@@ -157,11 +153,14 @@
                     </el-col>
                   </el-row>
                 </div>
-                <el-button type="primary" link size="small" @click="addPlan" style="margin-bottom:2px">+ 新增方案</el-button>
+                <el-button type="primary" link size="small" @click="addPlan" class="add-btn">+ 新增方案</el-button>
               </div>
 
               <!-- 测算按钮 -->
-              <el-button type="primary" @click="runCalc" :loading="loading" class="btn-primary" style="margin-bottom:24px">开始测算</el-button>
+              <el-button type="primary" @click="runCalc" :loading="loading" class="btn-primary calc-btn">
+                <svg style="width:16px;height:16px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                开始测算
+              </el-button>
             </el-form>
           </el-col>
 
@@ -549,7 +548,9 @@ export default {
 .field-label {
   font-size: 11px;
   color: #64748b;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .field-label-sub {
@@ -560,14 +561,15 @@ export default {
 .auto-value {
   line-height: 28px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--primary-light, #3b82f6);
   padding-left: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .empty-state {
   text-align: center;
-  padding: 80px 20px;
+  padding: 100px 20px;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -904,5 +906,61 @@ export default {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(26,86,219,0.2);
+}
+
+/* === 表单区辅助样式 === */
+.unit-block {
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+}
+
+.unit-block:hover {
+  border-color: #cbd5e1;
+}
+
+.unit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.unit-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.add-btn {
+  margin-bottom: 2px;
+}
+
+.calc-btn {
+  width: 100%;
+  height: 46px;
+  font-size: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100px 20px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow);
+}
+
+.empty-state p {
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 0;
 }
 </style>
