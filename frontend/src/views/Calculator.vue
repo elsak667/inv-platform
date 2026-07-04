@@ -176,41 +176,69 @@
               <!-- 方案对比卡片 -->
               <div class="section-card" style="margin-bottom:16px">
                 <div class="section-title">方案对比</div>
-                <el-row :gutter="12">
+                <el-row :gutter="16">
                   <el-col v-for="p in result.plans" :key="p.plan" :span="24 / result.plans.length">
-                    <div :class="['plan-card', selectedPlan === p.plan ? 'selected' : '', p.recommended ? 'recommended' : '']"
+                    <div :class="['plan-card-v2', selectedPlan === p.plan ? 'selected' : '']"
                       @click="selectedPlan = p.plan; $nextTick(drawChart)">
-                      <h4 style="margin:0 0 12px;font-size:14px;color:var(--primary);text-align:center">{{ p.plan }}</h4>
-                      <el-row :gutter="8">
-                        <el-col :span="12">
-                          <div class="metric-label" style="text-align:center">项目毛利</div>
-                          <div class="metric-value" style="text-align:center">
-                            {{ fmt0(p.project_gross_profit) }}<span style="font-size:11px;font-weight:400;color:#94a3b8">万</span>
+                      <div class="plan-card-v2-header">
+                        <span class="plan-name">{{ p.plan }}</span>
+                        <span v-if="selectedPlan === p.plan" class="plan-active-dot"></span>
+                      </div>
+                      <div class="plan-card-v2-body">
+                        <div class="kpi-row">
+                          <div class="kpi">
+                            <div class="kpi-label">项目毛利</div>
+                            <div :class="['kpi-value', p.project_gross_profit >= 0 ? 'pos' : 'neg']">
+                              {{ fmt0(p.project_gross_profit) }}<span class="kpi-unit">万</span>
+                            </div>
                           </div>
-                          <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:4px">
-                            运营毛利 {{ fmt0(p.operating_profit_total) }} + 出售毛利 {{ fmt0(p.sale_profit) }}
+                          <div class="kpi">
+                            <div class="kpi-label">现金流结余</div>
+                            <div :class="['kpi-value', p.cash_flow_total >= 0 ? 'pos' : 'neg']">
+                              {{ fmt0(p.cash_flow_total) }}<span class="kpi-unit">万</span>
+                            </div>
                           </div>
-                        </el-col>
-                        <el-col :span="12">
-                          <div class="metric-label" style="text-align:center">现金流结余</div>
-                          <div class="metric-value" style="text-align:center">
-                            {{ fmt0(p.cash_flow_total) }}<span style="font-size:11px;font-weight:400;color:#94a3b8">万</span>
+                        </div>
+                        <div class="kpi-breakdown">
+                          <div class="breakdown-item">
+                            <span class="bd-dot green"></span>
+                            <span class="bd-label">运营毛利</span>
+                            <span class="bd-val">{{ fmt0(p.operating_profit_total) }}</span>
                           </div>
-                          <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:4px">
-                            持有期收支 {{ fmt0(p.cash_flow_total - p.sale_revenue) }} + 出售 {{ fmt0(p.sale_revenue) }}
+                          <div class="breakdown-item">
+                            <span class="bd-dot blue"></span>
+                            <span class="bd-label">出售毛利</span>
+                            <span class="bd-val">{{ fmt0(p.sale_profit) }}</span>
                           </div>
-                        </el-col>
-                      </el-row>
+                          <div class="breakdown-item">
+                            <span class="bd-dot orange"></span>
+                            <span class="bd-label">持有期收支</span>
+                            <span class="bd-val">{{ fmt0(p.cash_flow_total - p.sale_revenue) }}</span>
+                          </div>
+                          <div class="breakdown-item">
+                            <span class="bd-dot purple"></span>
+                            <span class="bd-label">出售收回</span>
+                            <span class="bd-val">{{ fmt0(p.sale_revenue) }}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </el-col>
                 </el-row>
               </div>
 
               <!-- 现金流走势图 -->
-              <div class="section-card" style="margin-bottom:16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-                  <div class="section-title" style="margin-bottom:0">现金流走势</div>
-                  <span style="font-size:12px;color:#94a3b8">· {{ selectedPlan }}</span>
+              <div class="section-card chart-card" style="margin-bottom:16px">
+                <div class="chart-header">
+                  <div class="chart-title">
+                    <span class="chart-title-text">现金流走势</span>
+                    <span class="chart-plan-badge">{{ selectedPlan }}</span>
+                  </div>
+                  <div class="chart-legend-mini">
+                    <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span>租金</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>出售</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>现金净额</span>
+                  </div>
                 </div>
                 <div ref="chartEl" style="height:400px"></div>
               </div>
@@ -401,35 +429,60 @@ export default {
         return yd.map(y => { c += y.rent_income - y.tax - y.opex - y.finance_cost - y.loan_principal + y.sale_revenue; if (y.year === 1) c -= eq + dt; return Math.round(c * 100) / 100 })
       })()
       chart.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-        legend: { data: ['租金收入','出售收回','运营成本','税费','财务成本','还本支出','投资支出','现金净额'] },
-        xAxis: { data: years },
-        yAxis: { type: 'value', name: '万元' },
+        color: ['#10b981', '#f59e0b', '#94a3b8', '#cbd5e1', '#f87171', '#fca5a5', '#b91c1c', '#3b82f6'],
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(59,130,246,0.08)' } },
+          backgroundColor: 'rgba(15,43,92,0.92)',
+          borderColor: 'transparent',
+          textStyle: { color: '#fff', fontSize: 12 },
+          valueFormatter: (v) => v != null ? Number(v).toFixed(2) + ' 万' : '-',
+        },
+        legend: { show: false },
+        grid: { left: 50, right: 24, top: 24, bottom: 40 },
+        xAxis: {
+          data: years,
+          axisLine: { lineStyle: { color: '#e2e8f0' } },
+          axisTick: { show: false },
+          axisLabel: { color: '#64748b', fontSize: 11 },
+        },
+        yAxis: {
+          type: 'value',
+          name: '万元',
+          nameTextStyle: { color: '#94a3b8', fontSize: 11 },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: '#94a3b8', fontSize: 11 },
+          splitLine: { lineStyle: { color: '#f1f5f9', type: 'dashed' } },
+        },
         series: [
           { name: '租金收入', type: 'bar', stack: 'total', data: yd.map(y => y.rent_income),
-            itemStyle: { color: '#10b981' } },
-          { name: '出售收回', type: 'bar', stack: 'total', data: yd.map(y => y.sale_revenue),
-            itemStyle: { color: '#f59e0b' } },
-          { name: '运营成本', type: 'bar', stack: 'total', data: yd.map(y => -y.opex),
-            itemStyle: { color: '#94a3b8' } },
-          { name: '税费', type: 'bar', stack: 'total', data: yd.map(y => -y.tax),
-            itemStyle: { color: '#cbd5e1' } },
-          { name: '财务成本', type: 'bar', stack: 'total', data: yd.map(y => -y.finance_cost),
-            itemStyle: { color: '#f87171' } },
-          { name: '还本支出', type: 'bar', stack: 'total', data: yd.map(y => -y.loan_principal),
-            itemStyle: { color: '#fca5a5' } },
+            itemStyle: { borderRadius: [0,0,0,0] } },
+          { name: '出售收回', type: 'bar', stack: 'total', data: yd.map(y => y.sale_revenue) },
+          { name: '运营成本', type: 'bar', stack: 'total', data: yd.map(y => -y.opex) },
+          { name: '税费', type: 'bar', stack: 'total', data: yd.map(y => -y.tax) },
+          { name: '财务成本', type: 'bar', stack: 'total', data: yd.map(y => -y.finance_cost) },
+          { name: '还本支出', type: 'bar', stack: 'total', data: yd.map(y => -y.loan_principal) },
           { name: '投资支出', type: 'bar', stack: 'total', data: yd.map((y,i) => i === 0 ? -(eq + dt) : 0),
-            itemStyle: { color: '#b91c1c' } },
+            itemStyle: { borderRadius: [6,6,0,0] } },
           { name: '现金净额', type: 'line', data: cum,
-            lineStyle: { width: 2, color: '#3b82f6' },
-            itemStyle: { color: '#3b82f6' },
-            label: { show: true, formatter: (p) => p.value.toFixed(2), fontSize: 10, color: '#3b82f6', fontWeight: 'bold' },
+            smooth: true,
+            lineStyle: { width: 3, color: '#3b82f6' },
+            itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 2 },
+            symbol: 'circle', symbolSize: 8,
+            label: { show: true, formatter: (p) => p.value.toFixed(2), fontSize: 11, color: '#1a56db', fontWeight: 'bold', position: 'top' },
             markPoint: {
-              symbol: 'pin', symbolSize: 50,
+              symbol: 'pin', symbolSize: 56,
+              itemStyle: { color: '#1a56db' },
+              label: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
               data: [
-                { type: 'min', label: { formatter: (p) => '投资 -' + Math.abs(p.value).toFixed(2), color: '#fff', fontSize: 10 } },
-                { type: 'max', label: { formatter: (p) => '结余 ' + p.value.toFixed(2), color: '#fff', fontSize: 10 } },
+                { type: 'min', label: { formatter: (p) => '投资 -' + Math.abs(p.value).toFixed(0) } },
+                { type: 'max', label: { formatter: (p) => '结余 ' + p.value.toFixed(0) } },
               ]
+            },
+            areaStyle: {
+              color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.25)' }, { offset: 1, color: 'rgba(59,130,246,0)' }] }
             },
           },
         ]
@@ -543,5 +596,202 @@ export default {
 
 :deep(.el-tabs__nav-wrap::after) {
   height: 1px;
+}
+
+/* === 方案对比卡片 v2 === */
+.plan-card-v2 {
+  background: #fff;
+  border-radius: 14px;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  transition: all 0.25s;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.plan-card-v2::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: #e2e8f0;
+  transition: all 0.25s;
+}
+
+.plan-card-v2:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(15,43,92,0.08);
+  transform: translateY(-2px);
+}
+
+.plan-card-v2:hover::before {
+  background: var(--primary-light, #3b82f6);
+}
+
+.plan-card-v2.selected {
+  border-color: var(--primary, #1a56db);
+  box-shadow: 0 12px 32px rgba(26,86,219,0.18);
+}
+
+.plan-card-v2.selected::before {
+  background: var(--primary, #1a56db);
+  width: 4px;
+}
+
+.plan-card-v2-header {
+  padding: 14px 20px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.plan-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.3px;
+}
+
+.plan-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary, #1a56db);
+  box-shadow: 0 0 0 4px rgba(26,86,219,0.2);
+}
+
+.plan-card-v2-body {
+  padding: 16px 20px 18px;
+}
+
+.kpi-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.kpi {
+  flex: 1;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px 6px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.kpi-value.pos { color: #10b981; }
+.kpi-value.neg { color: #ef4444; }
+
+.kpi-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+.kpi-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.bd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bd-dot.green { background: #10b981; }
+.bd-dot.blue { background: #3b82f6; }
+.bd-dot.orange { background: #f59e0b; }
+.bd-dot.purple { background: #8b5cf6; }
+
+.bd-label {
+  color: #64748b;
+  flex: 1;
+}
+
+.bd-val {
+  color: #1e293b;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === 现金流走势图卡片 === */
+.chart-card {
+  padding: 20px 24px 16px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-title-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.chart-plan-badge {
+  background: linear-gradient(135deg, #1a56db, #3b82f6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+.chart-legend-mini {
+  display: flex;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 </style>
