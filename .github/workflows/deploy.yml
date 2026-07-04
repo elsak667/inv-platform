@@ -22,7 +22,7 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 22
           source: frontend/dist/
-          target: ~/apps/inv-platform/
+          target: ~/apps/inv-platform/frontend/
           strip_components: 1
       - name: restart backend
         uses: appleboy/ssh-action@v1.2.0
