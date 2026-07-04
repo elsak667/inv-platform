@@ -75,8 +75,8 @@
           <el-tab-pane label="总览" name="overview">
             <div class="metric-grid-4">
               <div class="big-metric"><label>净利润</label><span class="big-val" :class="{pos: pf.net_profit>0}">{{ fmt0(pf.net_profit) }}万</span></div>
-              <div class="big-metric"><label>净利率</label><span class="big-val">{{ (pf.net_margin*100).toFixed(1) }}%</span></div>
-              <div class="big-metric"><label>项目IRR(年)</label><span class="big-val">{{ irrYear(cf.project_irr) }}%</span></div>
+              <div class="big-metric"><label>净利率</label><span class="big-val">{{ (pf.net_margin*100).toFixed(2) }}%</span></div>
+              <div class="big-metric"><label>项目IRR(年)</label><span class="big-val">{{ irrYear(cf.project_irr).toFixed(2) }}%</span></div>
               <div class="big-metric"><label>回正周期</label><span class="big-val">{{ cf.payback_month || '-' }}个月</span></div>
             </div>
             <div class="chart-row">
@@ -131,7 +131,7 @@
                   <template #default="{row}">{{ fmt0(row.deduction) }}</template>
                 </el-table-column>
                 <el-table-column prop="excess_ratio" label="增值率" align="right" width="100">
-                  <template #default="{row}">{{ (row.excess_ratio*100).toFixed(1) }}%</template>
+                  <template #default="{row}">{{ (row.excess_ratio*100).toFixed(2) }}%</template>
                 </el-table-column>
                 <el-table-column prop="rate" label="税率" align="right" width="80">
                   <template #default="{row}">{{ (row.rate*100).toFixed(0) }}%</template>
@@ -151,8 +151,8 @@
           <!-- Tab 4: 现金流 -->
           <el-tab-pane label="现金流" name="cashflow">
             <div class="metric-grid-4">
-              <div class="big-metric"><label>项目IRR(年)</label><span class="big-val">{{ irrYear(cf.project_irr) }}%</span></div>
-              <div class="big-metric"><label>权益IRR(年)</label><span class="big-val">{{ irrYear(cf.equity_irr) }}%</span></div>
+              <div class="big-metric"><label>项目IRR(年)</label><span class="big-val">{{ irrYear(cf.project_irr).toFixed(2) }}%</span></div>
+              <div class="big-metric"><label>权益IRR(年)</label><span class="big-val">{{ irrYear(cf.equity_irr).toFixed(2) }}%</span></div>
               <div class="big-metric"><label>峰值资金需求</label><span class="big-val">{{ fmt0(cf.peak_deficit) }}万</span></div>
               <div class="big-metric"><label>权益出资</label><span class="big-val">{{ fmt0(cf.equity) }}万</span></div>
             </div>
@@ -226,7 +226,7 @@ export default {
   methods: {
     pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '' },
     unpct(v) { return parseFloat(v.replace('%', '')) / 100 },
-    fmt0(v) { return Number(v || 0).toLocaleString('zh-CN', {maximumFractionDigits:0}) },
+    fmt0(v) { return Number(v || 0).toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2}) },
     irrYear(m) { return m ? ((1+m)**12-1)*100 : 0 },
     addProd() {
       this.p.products.push({ name:'', type:'住宅', gfa:10000, saleable_area:9500, unit_price:20000, const_cost_per_sqm:4000, decoration:'毛坯' })
