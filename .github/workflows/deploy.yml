@@ -10,10 +10,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: corepack enable && corepack prepare pnpm@latest --activate
-      - run: pnpm install --frozen-lockfile
+      - run: npm install
         working-directory: frontend
-      - run: pnpm build
+      - run: npm run build
         working-directory: frontend
       - uses: appleboy/scp-action@v0.1.7
         with:
