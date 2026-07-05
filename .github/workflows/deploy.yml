@@ -38,16 +38,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           port: 22
+          command_timeout: 2m
           script_stop: true
           script: |
             cd /home/ubuntu/apps/inv-platform
             git pull
-            .venv/bin/pip install -q -r backend/requirements.txt
-            sudo systemctl stop inv-platform || true
-            sleep 1
-            sudo pkill -f "uvicorn.*8000" 2>/dev/null || true
-            sudo systemctl start inv-platform
+            echo "=== dmesg (OOM?) ==="
+            sudo dmesg --level=err,warn 2>/dev/null | tail -20 || true
+            echo "=== service status ==="
+            sudo systemctl status inv-platform --no-pager -n 50 || true
+            echo "=== journal ==="
+            sudo journalctl -u inv-platform --no-pager -n 80 || true
+            echo "=== restarting ==="
+            sudo systemctl restart inv-platform
             sleep 5
             curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "backend health check failed"; exit 1; }
-            echo "=== recent journal ==="
-            sudo journalctl -u inv-platform --no-pager -n 30
+            echo "=== service online ==="
