@@ -42,7 +42,7 @@ jobs:
           script: |
             cd /home/ubuntu/apps/inv-platform
             git pull
-            .venv/bin/pip install -q -r requirements.txt
+            .venv/bin/pip install -q -r backend/requirements.txt
             sudo systemctl restart inv-platform
             sleep 3
             curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "backend health check failed"; exit 1; }
