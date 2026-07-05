@@ -43,9 +43,11 @@ jobs:
             cd /home/ubuntu/apps/inv-platform
             git pull
             .venv/bin/pip install -q -r backend/requirements.txt
+            echo "=== who's on port 8000? ==="
+            sudo lsof -i :8000 || sudo ss -tlnp 'sport = :8000' || true
             sudo systemctl stop inv-platform
             sleep 1
-            fuser -k 8000/tcp 2>/dev/null || true
+            sudo fuser -k 8000/tcp 2>/dev/null || true
             sudo systemctl start inv-platform
             sleep 5
             curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "backend health check failed"; exit 1; }
