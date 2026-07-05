@@ -23,6 +23,8 @@ jobs:
           source: frontend/dist/
           target: ~/apps/inv-platform/frontend/
           strip_components: 1
+          overwrite: true
+          rm: true
       - name: restart backend
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -36,6 +38,10 @@ jobs:
             git pull
             pip install -r requirements.txt 2>&1 || echo "pip install skipped"
             sudo systemctl restart inv-platform
-            sleep 2
-            sudo systemctl status inv-platform --no-pager -n 10
-            sudo journalctl -u inv-platform --no-pager -n 30
+            sleep 3
+            echo "=== service status ==="
+            sudo systemctl status inv-platform --no-pager -n 20
+            echo "=== journal ==="
+            sudo journalctl -u inv-platform --no-pager -n 50
+            echo "=== health check ==="
+            curl -s -o /dev/null -w "HTTP %{http_code}" http://127.0.0.1:8000/api/templates || echo "curl failed"
