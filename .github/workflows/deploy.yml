@@ -21,10 +21,9 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 22
           source: frontend/dist/
-          target: ~/apps/inv-platform/frontend/
+          target: /home/ubuntu/apps/inv-platform/frontend/
           strip_components: 1
           overwrite: true
-          rm: true
       - name: restart backend
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -34,7 +33,7 @@ jobs:
           port: 22
           script_stop: true
           script: |
-            cd ~/apps/inv-platform
+            cd /home/ubuntu/apps/inv-platform
             git pull
             pip install -r requirements.txt 2>&1 || echo "pip install skipped"
             sudo systemctl restart inv-platform
