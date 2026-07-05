@@ -42,12 +42,7 @@ jobs:
           script: |
             cd /home/ubuntu/apps/inv-platform
             git pull
-            pip install -r requirements.txt 2>&1 || echo "pip install skipped"
+            .venv/bin/pip install -q -r requirements.txt
             sudo systemctl restart inv-platform
             sleep 3
-            echo "=== service status ==="
-            sudo systemctl status inv-platform --no-pager -n 20
-            echo "=== journal ==="
-            sudo journalctl -u inv-platform --no-pager -n 50
-            echo "=== health check ==="
-            curl -s -o /dev/null -w "HTTP %{http_code}" http://127.0.0.1:8000/api/templates || echo "curl failed"
+            curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "backend health check failed"; exit 1; }
