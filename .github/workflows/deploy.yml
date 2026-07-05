@@ -14,6 +14,14 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
+      - name: fix frontend permissions
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          port: 22
+          script: sudo rm -rf /home/ubuntu/apps/inv-platform/frontend/ && mkdir -p /home/ubuntu/apps/inv-platform/frontend/
       - uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -23,7 +31,6 @@ jobs:
           source: frontend/dist/
           target: /home/ubuntu/apps/inv-platform/frontend/
           strip_components: 1
-          overwrite: true
       - name: restart backend
         uses: appleboy/ssh-action@v1.2.0
         with:
