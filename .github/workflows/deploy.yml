@@ -34,4 +34,8 @@ jobs:
           script: |
             cd ~/apps/inv-platform
             git pull
+            pip install -r requirements.txt 2>&1 || echo "pip install skipped"
             sudo systemctl restart inv-platform
+            sleep 2
+            sudo systemctl status inv-platform --no-pager -n 10
+            sudo journalctl -u inv-platform --no-pager -n 30
