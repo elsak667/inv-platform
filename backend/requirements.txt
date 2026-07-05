@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 pyyaml
 pydantic
+numpy-financial
+python-dateutil

@@ -43,14 +43,8 @@ jobs:
           script: |
             cd /home/ubuntu/apps/inv-platform
             git pull
-            echo "=== dmesg (OOM?) ==="
-            sudo dmesg --level=err,warn 2>/dev/null | tail -20 || true
-            echo "=== service status ==="
-            sudo systemctl status inv-platform --no-pager -n 50 || true
-            echo "=== journal ==="
-            sudo journalctl -u inv-platform --no-pager -n 80 || true
-            echo "=== restarting ==="
+            .venv/bin/pip install -q -r backend/requirements.txt
+            sudo systemctl daemon-reload
             sudo systemctl restart inv-platform
-            sleep 5
-            curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "backend health check failed"; exit 1; }
-            echo "=== service online ==="
+            sleep 8
+            curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "health check failed, checking journal..."; sudo journalctl -u inv-platform --no-pager -n 20; exit 1; }
