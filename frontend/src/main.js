@@ -11,6 +11,14 @@ import KaifaCalculator from './views/KaifaCalculator.vue'
 import ZulinCalculator from './views/ZulinCalculator.vue'
 import Records from './views/Records.vue'
 
+// 显式声明 passive:false 消除 Chrome wheel/mousewheel 合规警告
+const _orig = EventTarget.prototype.addEventListener
+EventTarget.prototype.addEventListener = function (t, h, o) {
+  if ((t === 'wheel' || t === 'mousewheel') && (!o || o.passive === undefined))
+    return _orig.call(this, t, h, typeof o === 'object' ? { ...o, passive: false } : { passive: false, capture: !!o })
+  return _orig.call(this, t, h, o)
+}
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [

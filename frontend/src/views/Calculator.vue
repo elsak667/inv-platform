@@ -462,9 +462,7 @@ export default {
     },
     drawChart() {
       if (!this.$refs.chartEl) return
-      const el = this.$refs.chartEl
-      ;(() => { const _a = el.addEventListener; el.addEventListener = (t, h, o) => _a.call(el, t, h, (t === 'wheel' || t === 'mousewheel') && (!o || o.passive === undefined) ? { ...(typeof o === 'object' ? o : {}), passive: false } : o) })()
-      const chart = echarts.init(el)
+      const chart = echarts.init(this.$refs.chartEl)
       const yd = this.currentPlan.yearly
       const years = yd.map(y => '第' + y.year + '年')
       const cum = this.currentPlan.cumulative_cf || yd.map(y => y.cash_flow || 0)

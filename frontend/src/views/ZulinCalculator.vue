@@ -368,7 +368,6 @@ export default {
       const el = this.$refs.cfChartRef
       if (!el || !this.result?.cumulative_cf?.length) return
       if (this.cfChart) this.cfChart.dispose()
-      ;(() => { const _a = el.addEventListener; el.addEventListener = (t, h, o) => _a.call(el, t, h, (t === 'wheel' || t === 'mousewheel') && (!o || o.passive === undefined) ? { ...(typeof o === 'object' ? o : {}), passive: false } : o) })()
       this.cfChart = echarts.init(el)
       const years = this.result.yearly.map(r => r.calendar_year)
       const cf = this.result.cumulative_cf
