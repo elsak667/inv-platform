@@ -14,8 +14,8 @@
           <span class="logo-sub">Investment Calculator</span>
         </div>
       </div>
-      <el-menu mode="horizontal" :default-active="$route.path" router class="app-nav">
-        <el-menu-item index="/">
+      <nav class="app-nav">
+        <router-link to="/" class="nav-item" :class="{ active: $route.path === '/' }">
           <svg style="width:15px;height:15px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7" rx="1"/>
             <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -23,8 +23,8 @@
             <rect x="14" y="14" width="7" height="7" rx="1"/>
           </svg>
           模板选择
-        </el-menu-item>
-        <el-menu-item index="/records">
+        </router-link>
+        <router-link to="/records" class="nav-item" :class="{ active: $route.path === '/records' }">
           <svg style="width:15px;height:15px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
@@ -32,8 +32,8 @@
             <line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
           历史方案
-        </el-menu-item>
-      </el-menu>
+        </router-link>
+      </nav>
       <div class="header-right">
         <span class="env-badge">v1.0</span>
       </div>
@@ -99,29 +99,34 @@
 
 .app-nav {
   flex: 1;
-  background: transparent;
-  border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.app-nav .el-menu-item {
-  color: rgba(255,255,255,0.75) !important;
+.nav-item {
+  color: rgba(255,255,255,0.75);
   font-size: 14px;
   height: 64px;
-  line-height: 64px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.app-nav .el-menu-item:hover {
-  color: #fff !important;
-  background: rgba(255,255,255,0.08) !important;
-  border-bottom-color: rgba(255,255,255,0.3) !important;
+.nav-item:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  border-bottom-color: rgba(255,255,255,0.3);
 }
 
-.app-nav .el-menu-item.is-active {
-  color: #fff !important;
-  border-bottom-color: #fff !important;
+.nav-item.active {
+  color: #fff;
+  border-bottom-color: #fff;
   font-weight: 600;
 }
 
