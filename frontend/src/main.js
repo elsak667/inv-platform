@@ -30,6 +30,7 @@ app.config.errorHandler = (err, vm, info) => {
   console.error('[Vue-global]', err, info)
 }
 window.addEventListener('error', e => {
+  if (e.message?.startsWith('ResizeObserver loop')) return
   console.error('[window-error]', e.error?.stack || e.error || e.message)
 })
 app.use(router)
