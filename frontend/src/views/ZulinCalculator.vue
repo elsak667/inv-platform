@@ -150,19 +150,20 @@ export default {
   computed: {
     yearlyRows() {
       const y = this.result?.yearly || []
-      const cf = this.result?.cumulative_cf || []
+      const cumCf = this.result?.cumulative_cf || []
+      const equity = 38400  // ponytail: hardcoded from template, add to param if needed
       return y.map((r, i) => ({
         year: i + 1,
         cal: r.calendar_year,
         occ: (r.occupancy * 100).toFixed(1) + '%',
         rent: r.rent_income,
-        opex: r.operation_cost,
-        interest: r.interest,
-        decor: r.decoration_cost,
+        opex: r.opex,
+        interest: r.loan_interest,
+        decor: r.renovation_capex,
         tax: r.income_tax,
-        repay: r.repayment_total,
-        cf: cf[i] || r.cash_flow + this._getEquity(i, cf),
-        cum: r.cumulative_cash_flow || 0,
+        repay: r.loan_principal,
+        cf: i === 0 ? r.cash_flow - equity : r.cash_flow,
+        cum: cumCf[i] || 0,
       }))
     },
     scenarioRows() {
