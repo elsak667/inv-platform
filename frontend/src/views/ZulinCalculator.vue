@@ -7,25 +7,34 @@
         <div class="form-section">
           <div class="section-hd">1. 收购项目</div>
           <el-row :gutter="8">
-            <el-col :span="8"><label>总套数</label><el-input-number v-model="p.acquisition.total_units" :min="1" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>总面积(㎡)</label><el-input-number v-model="p.acquisition.total_area" :min="1" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>收购总价(万元)</label><el-input-number v-model="p.acquisition.total_price" :min="1" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>收购总价(万元)</label><el-input-number v-model="p.acquisition.total_price" :min="0" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>自有资金比例</label><el-input-number v-model="p.acquisition.equity_ratio" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
           </el-row>
         </div>
         <div class="form-section">
-          <div class="section-hd">2. 租赁</div>
+          <div class="section-hd">2. 租金</div>
           <el-row :gutter="8">
-            <el-col :span="8"><label>基础月租(元/㎡)</label><el-input-number v-model="p.rental.base_monthly_rent" :min="0" :step="0.1" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>调租间隔(年)</label><el-input-number v-model="p.rental.adjustment_period" :min="1" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>年涨幅</label><el-input-number v-model="p.rental.adjustment_rate" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>满租月租金(万元)</label><el-input-number v-model="p.rental.monthly_rent_full" :min="0" :step="10" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>稳定期出租率</label><el-input-number v-model="p.rental.occupancy_stable" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
           </el-row>
           <el-row :gutter="8" style="margin-top:8px">
-            <el-col :span="8"><label>年运营成本(万元)</label><el-input-number v-model="p.rental.operation_cost" :min="0" style="width:100%" size="small" /></el-col>
-            <el-col :span="16"><label>爬坡期(月)</label><el-input-number v-model="p.ramp_up.ramp_duration_months" :min="1" :max="60" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>调租间隔(年)</label><el-input-number v-model="p.rental.growth_interval" :min="1" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>每次涨幅</label><el-input-number v-model="p.rental.growth_rate" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+          </el-row>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12"><label>运营成本占比</label><el-input-number v-model="p.operating_cost_ratio" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
           </el-row>
         </div>
         <div class="form-section">
-          <div class="section-hd">3. 装修</div>
+          <div class="section-hd">3. 爬坡期</div>
+          <el-row :gutter="8">
+            <el-col :span="8"><label>初始出租率</label><el-input-number v-model="p.ramp_up.start_rate" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="8"><label>结束出租率</label><el-input-number v-model="p.ramp_up.end_rate" :min="0" :max="1" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="8"><label>爬坡月数</label><el-input-number v-model="p.ramp_up.months" :min="1" :max="60" style="width:100%" size="small" /></el-col>
+          </el-row>
+        </div>
+        <div class="form-section">
+          <div class="section-hd">4. 装修</div>
           <el-row :gutter="8">
             <el-col :span="8"><label>初始装修(万元)</label><el-input-number v-model="p.renovation.initial_cost" :min="0" style="width:100%" size="small" /></el-col>
             <el-col :span="8"><label>周期装修(万元)</label><el-input-number v-model="p.renovation.cycle_cost" :min="0" style="width:100%" size="small" /></el-col>
@@ -33,19 +42,23 @@
           </el-row>
         </div>
         <div class="form-section">
-          <div class="section-hd">4. 融资</div>
+          <div class="section-hd">5. 融资</div>
           <el-row :gutter="8">
-            <el-col :span="8"><label>贷款总额(万元)</label><el-input-number v-model="p.loan.total_loan" :min="0" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>年利率</label><el-input-number v-model="p.loan.interest_rate" :min="0" :max="0.15" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
-            <el-col :span="8"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="1" :max="30" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>年利率</label><el-input-number v-model="p.loan.rate" :min="0" :max="0.15" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="1" :max="30" style="width:100%" size="small" /></el-col>
+          </el-row>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12"><label>宽限期(年)</label><el-input-number v-model="p.loan.grace_years" :min="0" :max="5" style="width:100%" size="small" /></el-col>
           </el-row>
         </div>
         <div class="form-section">
-          <div class="section-hd">5. 税费</div>
+          <div class="section-hd">6. 税费</div>
           <el-row :gutter="8">
-            <el-col :span="10"><label>所得税率</label><el-input-number v-model="p.tax.income_tax_rate" :min="0" :max="0.5" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
-            <el-col :span="7" style="text-align:center"><el-switch v-model="p.tax.tax_shield" active-text="税盾ON" inactive-text="税盾OFF" /></el-col>
-            <el-col :span="7" style="text-align:center"><el-checkbox v-model="p.tax.loss_carryforward">亏损结转</el-checkbox></el-col>
+            <el-col :span="12"><label>所得税率</label><el-input-number v-model="p.tax.income_tax_rate" :min="0" :max="0.5" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><el-switch v-model="p.tax.tax_shield" active-text="税盾ON" inactive-text="税盾OFF" style="margin-top:18px" /></el-col>
+          </el-row>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12"><el-checkbox v-model="p.tax.loss_carryforward">亏损结转</el-checkbox></el-col>
           </el-row>
         </div>
         <el-button type="primary" @click="runCalc" :loading="running" class="calc-btn">开始测算</el-button>
@@ -100,12 +113,12 @@
               <el-table-column prop="year" label="年份" width="60" align="center" />
               <el-table-column prop="cal" label="年" width="60" align="center" />
               <el-table-column prop="occ" label="出租率" width="80" align="right" />
-              <el-table-column prop="rent" label="租金" align="right" width="110"><template #default="{row}">{{ fmt0(row.rent) }}</template></el-table-column>
-              <el-table-column prop="opex" label="运营" align="right" width="100"><template #default="{row}">{{ fmt0(row.opex) }}</template></el-table-column>
-              <el-table-column prop="interest" label="利息" align="right" width="100"><template #default="{row}">{{ fmt0(row.interest) }}</template></el-table-column>
-              <el-table-column prop="decor" label="装修" align="right" width="100"><template #default="{row}">{{ fmt0(row.decor) }}</template></el-table-column>
-              <el-table-column prop="tax" label="所得税" align="right" width="100"><template #default="{row}">{{ fmt0(row.tax) }}</template></el-table-column>
-              <el-table-column prop="repay" label="还本" align="right" width="100"><template #default="{row}">{{ fmt0(row.repay) }}</template></el-table-column>
+              <el-table-column prop="rent" label="租金" align="right" width="110" />
+              <el-table-column prop="opex" label="运营" align="right" width="100" />
+              <el-table-column prop="interest" label="利息" align="right" width="100" />
+              <el-table-column prop="decor" label="装修" align="right" width="100" />
+              <el-table-column prop="tax" label="所得税" align="right" width="100" />
+              <el-table-column prop="repay" label="还本" align="right" width="100" />
               <el-table-column prop="cf" label="净现金流" align="right" width="120">
                 <template #default="{row}"><span :class="row.cf >= 0 ? 'pos' : 'neg'">{{ fmt0(row.cf) }}</span></template>
               </el-table-column>
@@ -151,7 +164,7 @@ export default {
     yearlyRows() {
       const y = this.result?.yearly || []
       const cumCf = this.result?.cumulative_cf || []
-      const equity = 38400  // ponytail: hardcoded from template, add to param if needed
+      const equity = this.p?.acquisition?.total_price * this.p?.acquisition?.equity_ratio || 38400
       return y.map((r, i) => ({
         year: i + 1,
         cal: r.calendar_year,
@@ -162,7 +175,7 @@ export default {
         decor: r.renovation_capex,
         tax: r.income_tax,
         repay: r.loan_principal,
-        cf: i === 0 ? r.cash_flow - equity : r.cash_flow,
+        cf: cumCf[i] - (cumCf[i - 1] || 0),
         cum: cumCf[i] || 0,
       }))
     },
@@ -193,7 +206,6 @@ export default {
     pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '' },
     unpct(v) { return parseFloat(String(v || '0').replace('%', '')) / 100 },
     fmt0(v) { return Number(v || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
-    _getEquity(i, cf) { return i === 0 && cf?.length > 0 ? -38400 : 0 },
     async runCalc() {
       this.running = true
       try {
