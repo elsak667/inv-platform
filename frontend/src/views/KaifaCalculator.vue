@@ -141,7 +141,7 @@
                 <table class="plain-table">
                   <thead><tr><th style="width:120px">类型</th><th style="width:120px">收入(不含税)</th><th style="width:120px">扣除合计</th><th style="width:100px">增值率</th><th style="width:80px">税率</th><th style="width:120px">应纳税额</th></tr></thead>
                   <tbody>
-                    <tr v-for="r in latRows" :key="r.type" v-if="r">
+                    <tr v-for="r in latRows" :key="r.type">
                       <td>{{ r.type }}</td>
                       <td>{{ fmt0(r.revenue_ex_vat) }}</td>
                       <td>{{ fmt0(r.deduction) }}</td>
@@ -214,7 +214,7 @@ export default {
     },
     latRows() {
       const types = this.r.taxes?.land_settlement_detail?.types || []
-      return types.filter(t => t.gfa > 0)
+      return types.filter(t => t && t.gfa > 0)
     },
     conclusion() {
       const pf = this.pf, cf = this.cf
