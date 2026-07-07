@@ -1,0 +1,117 @@
+# 租赁运营项目测算模板
+# 对应: 3058套征收安置房运营收支测算（2024.7-2049.6）
+# 单位: 万元 / 年
+
+meta:
+  id: zulin
+  name: "租赁运营项目测算"
+  engine: zulin_v1
+  version: "1.0"
+  description: "收购存量房→装修→长期租赁运营，含税盾开关、爬坡期、周期性装修、多方案对比"
+
+project:
+  name: "3058套征收安置房"
+  city: 上海
+  start_year: 2024
+  total_years: 26           # 2024-2049, 首尾各半年
+
+# ============ 收购与装修 ============
+acquisition:
+  total_price: 192000        # 收购总价 万元
+  equity_ratio: 0.20         # 自有资金比例
+  loan_amount: 153600        # 贷款金额 万元 (=总价×80%)
+
+renovation:
+  initial_cost: 33600        # 首次软硬装 万元
+  cycle_years: 5             # 每5年更新重置
+  cycle_cost: 5600           # 每次更新重置 万元
+
+# ============ 折旧摊销 ============
+depreciation:
+  building_life: 40          # 房屋折旧年限
+  decoration_life: 5         # 装修摊销年限
+  # 年折旧 = 192000/40 = 4800
+  # 年摊销 = 33600/5(first) → 5600/5(recurring) = 1120
+
+# ============ 租金 ============
+rental:
+  monthly_rent_full: 1841.4  # 满租月租金 万元 (3058套)
+  # 年满租租金 = 1841.4 × 12 = 22096.8
+  occupancy_stable: 0.90     # 稳定期出租率
+  growth_interval: 2         # 每2年调一次
+  growth_rate: 0.02          # 每次涨幅 2%
+  # 租金年增长率 ≈ 1% (每2年2%)
+
+# 爬坡期: 2025.5→2026.12, 逐月递增
+ramp_up:
+  start_rate: 0.20           # 初始出租率
+  end_rate: 0.903            # 结束出租率(=稳定期)
+  months: 20                 # 爬坡月数
+  # 每月线性递增: (0.903-0.20)/19 ≈ 0.037/月
+
+# ============ 运营成本 ============
+operating_cost_ratio: 0.20   # 运营成本占租金收入比
+
+# ============ 贷款 ============
+loan:
+  rate: 0.0289               # 年利率 2.89%
+  term_years: 25             # 期限(2024.7-2049.6)
+  grace_years: 2             # 宽限期(只付息)
+  # 还本计划(万元): 逐年递增, 以年度现金流覆盖为限
+  repayment:
+    # 内部年份(1=2024): 宽限期2年
+    year_3: 2000
+    year_4: 2000
+    year_5: 3000
+    year_6: 3000
+    year_7: 3000
+    year_8: 4000
+    year_9: 4000
+    year_10: 4000
+    year_11: 5000
+    year_12: 5000
+    year_13: 5000
+    year_14: 7000
+    year_15: 7000
+    year_16: 7000
+    year_17: 7000
+    year_18: 9000
+    year_19: 9000
+    year_20: 9000
+    year_21: 9000
+    year_22: 9000
+    year_23: 10000
+    year_24: 10000
+    year_25: 10000
+    year_26: -1    # -1 = 还清剩余
+
+# ============ 税费 ============
+tax:
+  income_tax_rate: 0.25      # 所得税率
+  tax_shield: true           # 税盾开关: true=折旧/利息在税前扣除, false=不扣除
+  loss_carryforward: false   # 亏损结转: true=亏损抵扣未来利润(结转5年), false=每年独立计税
+  carryforward_years: 5      # 亏损结转年限(税法5年, -1=无限)
+  # 公租房税收减免
+  vat_exempt: true
+  property_tax_exempt: true
+
+# ============ 期末出售(可选) ============
+sale:
+  enabled: false             # 是否期末出售
+  price_premium: 0           # 出售溢价率
+
+# ============ 方案配置(多场景对比) ============
+scenarios:
+  - id: optimistic
+    name: "乐观(出租率90%)"
+    rental:
+      occupancy_stable: 0.90
+  - id: normal
+    name: "中性(出租率85%)"
+    rental:
+      occupancy_stable: 0.85
+  - id: conservative
+    name: "保守(出租率90%,租金8折)"
+    rental:
+      occupancy_stable: 0.90
+      rent_discount: 0.80    # 租金打8折
