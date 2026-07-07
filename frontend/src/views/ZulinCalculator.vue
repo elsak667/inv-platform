@@ -113,18 +113,14 @@
               <el-table-column prop="year" label="年份" width="60" align="center" />
               <el-table-column prop="cal" label="年" width="60" align="center" />
               <el-table-column prop="occ" label="出租率" width="80" align="right" />
-              <el-table-column prop="rent" label="租金" align="right" width="110" />
-              <el-table-column prop="opex" label="运营" align="right" width="100" />
-              <el-table-column prop="interest" label="利息" align="right" width="100" />
-              <el-table-column prop="decor" label="装修" align="right" width="100" />
-              <el-table-column prop="tax" label="所得税" align="right" width="100" />
-              <el-table-column prop="repay" label="还本" align="right" width="100" />
-              <el-table-column prop="cf" label="净现金流" align="right" width="120">
-                <template #default="{row}"><span :class="row.cf >= 0 ? 'pos' : 'neg'">{{ fmt0(row.cf) }}</span></template>
-              </el-table-column>
-              <el-table-column prop="cum" label="累计CF" align="right" width="130">
-                <template #default="{row}"><span :class="row.cum >= 0 ? 'pos' : 'neg'">{{ fmt0(row.cum) }}</span></template>
-              </el-table-column>
+              <el-table-column prop="rent" label="租金" align="right" width="110" :formatter="fmtVal" />
+              <el-table-column prop="opex" label="运营" align="right" width="100" :formatter="fmtVal" />
+              <el-table-column prop="interest" label="利息" align="right" width="100" :formatter="fmtVal" />
+              <el-table-column prop="decor" label="装修" align="right" width="100" :formatter="fmtVal" />
+              <el-table-column prop="tax" label="所得税" align="right" width="100" :formatter="fmtVal" />
+              <el-table-column prop="repay" label="还本" align="right" width="100" :formatter="fmtVal" />
+              <el-table-column prop="cf" label="净现金流" align="right" width="120" :formatter="fmtVal" :cell-class-name="r => r.row.cf >= 0 ? 'pos' : 'neg'" />
+              <el-table-column prop="cum" label="累计CF" align="right" width="130" :formatter="fmtVal" :cell-class-name="r => r.row.cum >= 0 ? 'pos' : 'neg'" />
             </el-table>
           </el-tab-pane>
 
@@ -255,6 +251,7 @@ export default {
     pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '' },
     unpct(v) { return parseFloat(String(v || '0').replace('%', '')) / 100 },
     fmt0(v) { return Number(v || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+    fmtVal(row, col, val) { return this.fmt0(val) },
     async runCalc() {
       this.running = true
       try {
