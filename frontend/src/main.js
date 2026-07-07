@@ -26,6 +26,12 @@ const app = createApp(App)
 for (const [key, comp] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, comp)
 }
+app.config.errorHandler = (err, vm, info) => {
+  console.error('[Vue-global]', err, info)
+}
+window.addEventListener('error', e => {
+  console.error('[window-error]', e.error?.stack || e.error || e.message)
+})
 app.use(router)
 app.use(ElementPlus)
 app.mount('#app')
