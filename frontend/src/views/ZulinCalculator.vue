@@ -100,16 +100,16 @@
               <el-table-column prop="year" label="年份" width="60" align="center" />
               <el-table-column prop="cal" label="年" width="60" align="center" />
               <el-table-column prop="occ" label="出租率" width="80" align="right" />
-              <el-table-column label="租金" align="right" width="110"><template #default="{row}">{{ fmt0(row.rent) }}</template></el-table-column>
-              <el-table-column label="运营" align="right" width="100"><template #default="{row}">{{ fmt0(row.opex) }}</template></el-table-column>
-              <el-table-column label="利息" align="right" width="100"><template #default="{row}">{{ fmt0(row.interest) }}</template></el-table-column>
-              <el-table-column label="装修" align="right" width="100"><template #default="{row}">{{ fmt0(row.decor) }}</template></el-table-column>
-              <el-table-column label="所得税" align="right" width="100"><template #default="{row}">{{ fmt0(row.tax) }}</template></el-table-column>
-              <el-table-column label="还本" align="right" width="100"><template #default="{row}">{{ fmt0(row.repay) }}</template></el-table-column>
-              <el-table-column label="净现金流" align="right" width="120">
+              <el-table-column prop="rent" label="租金" align="right" width="110"><template #default="{row}">{{ fmt0(row.rent) }}</template></el-table-column>
+              <el-table-column prop="opex" label="运营" align="right" width="100"><template #default="{row}">{{ fmt0(row.opex) }}</template></el-table-column>
+              <el-table-column prop="interest" label="利息" align="right" width="100"><template #default="{row}">{{ fmt0(row.interest) }}</template></el-table-column>
+              <el-table-column prop="decor" label="装修" align="right" width="100"><template #default="{row}">{{ fmt0(row.decor) }}</template></el-table-column>
+              <el-table-column prop="tax" label="所得税" align="right" width="100"><template #default="{row}">{{ fmt0(row.tax) }}</template></el-table-column>
+              <el-table-column prop="repay" label="还本" align="right" width="100"><template #default="{row}">{{ fmt0(row.repay) }}</template></el-table-column>
+              <el-table-column prop="cf" label="净现金流" align="right" width="120">
                 <template #default="{row}"><span :class="row.cf >= 0 ? 'pos' : 'neg'">{{ fmt0(row.cf) }}</span></template>
               </el-table-column>
-              <el-table-column label="累计CF" align="right" width="130">
+              <el-table-column prop="cum" label="累计CF" align="right" width="130">
                 <template #default="{row}"><span :class="row.cum >= 0 ? 'pos' : 'neg'">{{ fmt0(row.cum) }}</span></template>
               </el-table-column>
             </el-table>
