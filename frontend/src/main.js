@@ -27,12 +27,20 @@ for (const [key, comp] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, comp)
 }
 app.config.errorHandler = (err, vm, info) => {
-  console.error('[Vue-global]', err, info)
+  console.error('[Vue-global]', err, info, vm?.$options?.name || vm?.type?.name || '?')
 }
 window.addEventListener('error', e => {
   if (e.message?.startsWith('ResizeObserver loop')) return
   console.error('[window-error]', e.error?.stack || e.error || e.message)
+  // Mark the event as handled so the default handler still shows it
+})
+window.addEventListener('unhandledrejection', e => {
+  console.error('[unhandled]', e.reason?.stack || e.reason)
 })
 app.use(router)
 app.use(ElementPlus)
-app.mount('#app')
+try {
+  app.mount('#app')
+} catch (e) {
+  console.error('[mount-error]', e)
+}
