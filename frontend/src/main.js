@@ -37,10 +37,17 @@ window.addEventListener('unhandledrejection', e => {
   console.error('[unhandled]', e.reason?.stack || e.reason)
 })
 
-const origWarn = console.warn
-console.warn = (...args) => {
-  if (args[0]?.includes?.('non-passive event listener')) return
-  origWarn.call(console, ...args)
+// Make wheel/mousewheel listeners passive by default to suppress Chrome violation warnings (from ECharts)
+const origAddEventListener = EventTarget.prototype.addEventListener
+EventTarget.prototype.addEventListener = function(type, fn, options) {
+  if (type === 'wheel' || type === 'mousewheel') {
+    if (options && typeof options === 'object') {
+      options = { ...options, passive: true }
+    } else {
+      options = { capture: !!options, passive: true }
+    }
+  }
+  return origAddEventListener.call(this, type, fn, options)
 }
 
 app.use(router)
