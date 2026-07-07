@@ -20,7 +20,7 @@
 
         <div class="form-section">
           <div class="section-hd">2. 产品</div>
-          <div v-for="(prod, i) in p.products" :key="i" class="prod-block">
+          <div v-for="(prod, i) in p.products" :key="i" v-if="prod" class="prod-block">
             <div class="prod-hd">产品{{ i+1 }} <el-button type="danger" link size="small" @click="p.products.splice(i,1)">×</el-button></div>
             <el-row :gutter="6">
               <el-col :span="6"><label>名称</label><el-input v-model="prod.name" size="small" /></el-col>
@@ -141,7 +141,7 @@
                 <table class="plain-table">
                   <thead><tr><th style="width:120px">类型</th><th style="width:120px">收入(不含税)</th><th style="width:120px">扣除合计</th><th style="width:100px">增值率</th><th style="width:80px">税率</th><th style="width:120px">应纳税额</th></tr></thead>
                   <tbody>
-                    <tr v-for="r in latRows" :key="r.type">
+                    <tr v-for="r in latRows" :key="r.type" v-if="r">
                       <td>{{ r.type }}</td>
                       <td>{{ fmt0(r.revenue_ex_vat) }}</td>
                       <td>{{ fmt0(r.deduction) }}</td>
