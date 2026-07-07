@@ -147,10 +147,10 @@
             <div class="plain-table-wrap" style="margin-bottom:16px">
               <table class="plain-table">
                 <thead><tr>
-                  <th>方案</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th><th style="width:30px"></th>
+                  <th>方案</th><th>说明</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th><th style="width:30px"></th>
                 </tr></thead>
                 <tbody><tr v-for="s in scenarioRows" :key="s.name">
-                  <td>{{ s.name }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
+                  <td>{{ s.name }}</td><td>{{ s.cond }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
                   <td><el-button type="danger" size="mini" @click="deleteScenario(s.name)" title="删除">×</el-button></td>
                 </tr></tbody>
               </table>
@@ -224,6 +224,7 @@ export default {
       loading: true, cfg: null, p: null,
       result: null, shieldOn: null, shieldOff: null,
       allPlans: null,
+      scenarioDefs: [],
       scenarioPlans: [],
       deletedScenarios: [],
       running: false,
@@ -265,21 +266,27 @@ export default {
       }))
     },
     scenarioRows() {
-      return this.scenarioPlans.map(s => ({
-        name: s.scenario,
-        irr: s.irr_pct + '%',
-        payback: (s.payback_year || '—') + '年',
-        cum: this.fmt0(s.cumulative_cash_flow),
-        total_tax: this.fmt0(s.total_tax),
-        total_rent: this.fmt0(s.total_rent),
-        total_interest: this.fmt0(s.total_interest),
-      }))
+      return this.scenarioPlans.map(s => {
+        const def = this.scenarioDefs.find(d => d.id === s.scenario)
+        const cond = def ? def.name : ''
+        return {
+          name: s.scenario,
+          cond,
+          irr: s.irr_pct + '%',
+          payback: (s.payback_year || '—') + '年',
+          cum: this.fmt0(s.cumulative_cash_flow),
+          total_tax: this.fmt0(s.total_tax),
+          total_rent: this.fmt0(s.total_rent),
+          total_interest: this.fmt0(s.total_interest),
+        }
+      })
     },
   },
   async mounted() {
     try {
       this.cfg = await api.getTemplate('zulin')
       const { meta, scenarios, ...rest } = this.cfg
+      this.scenarioDefs = scenarios || []
       this.p = JSON.parse(JSON.stringify(rest))
       await this.runCalc()
       this.fetchScenarios()
