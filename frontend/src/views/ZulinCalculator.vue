@@ -374,23 +374,26 @@ export default {
       const y = this.result?.yearly
       const cum = this.result?.cumulative_cf
       if (!el || !y?.length || !cum?.length) return
-      if (this.cfChart) this.cfChart.dispose()
-      this.cfChart = echarts.init(el)
-      const years = y.map(r => r.calendar_year)
-      const cf = [...cum]
-      const pb = this.result.payback_year
-      this.cfChart.setOption({
-        tooltip: { trigger: 'axis', valueFormatter: v => v != null ? this.fmt0(v) + '万' : '' },
-        grid: { left: 64, right: 24, top: 24, bottom: 36 },
-        xAxis: { type: 'category', data: years, axisLabel: { rotate: 45, fontSize: 10 } },
-        yAxis: { type: 'value', axisLabel: { formatter: v => this.fmt0(v) } },
-        series: [{
-          type: 'line', data: cf, smooth: true, lineStyle: { width: 2, color: '#3b82f6' },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(59,130,246,0.2)'},{offset:1,color:'rgba(59,130,246,0)'}]) },
-          markLine: pb ? { symbol: 'none', lineStyle: { type: 'dashed', color: '#10b981', width: 2 }, data: [{ xAxis: pb - 1, label: { formatter: `回收期: ${pb}年`, position: 'end', color: '#10b981', fontSize: 12 } }] } : undefined,
-        }],
-      })
-      this.cfChart.resize()
+      if (!el.clientHeight) { setTimeout(() => this.drawCfChart(), 100); return }
+      try {
+        if (this.cfChart) this.cfChart.dispose()
+        this.cfChart = echarts.init(el)
+        const years = y.map(r => r.calendar_year)
+        const cf = [...cum]
+        const pb = this.result.payback_year
+        this.cfChart.setOption({
+          tooltip: { trigger: 'axis', valueFormatter: v => v != null ? this.fmt0(v) + '万' : '' },
+          grid: { left: 64, right: 24, top: 24, bottom: 36 },
+          xAxis: { type: 'category', data: years, axisLabel: { rotate: 45, fontSize: 10 } },
+          yAxis: { type: 'value', axisLabel: { formatter: v => this.fmt0(v) } },
+          series: [{
+            type: 'line', data: cf, smooth: true, lineStyle: { width: 2, color: '#3b82f6' },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(59,130,246,0.2)'},{offset:1,color:'rgba(59,130,246,0)'}]) },
+            markLine: pb ? { symbol: 'none', lineStyle: { type: 'dashed', color: '#10b981', width: 2 }, data: [{ xAxis: pb - 1, label: { formatter: `回收期: ${pb}年`, position: 'end', color: '#10b981', fontSize: 12 } }] } : undefined,
+          }],
+        })
+        this.cfChart.resize()
+      } catch (e) { console.warn('[cfChart] mute', e) }
     },
     _setNested(obj, path, val) {
       const parts = path.split('.')
