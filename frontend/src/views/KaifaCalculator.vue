@@ -98,13 +98,23 @@
           <!-- Tab 2: 利润表 -->
           <el-tab-pane label="利润表" name="pl">
             <div class="result-section">
-              <el-table :data="plRows" :summary-method="plSummary" border size="small" show-summary>
-                <el-table-column prop="item" label="科目" min-width="220" />
-                <el-table-column prop="amount" label="金额(万元)" align="right" width="140">
-                  <template #default="{row}"><span :class="{pos:row.amount>0, neg:row.amount<0}">{{ fmt0(row.amount) }}</span></template>
-                </el-table-column>
-                <el-table-column prop="note" label="说明" min-width="200" />
-              </el-table>
+              <div class="plain-table-wrap">
+                <table class="plain-table">
+                  <thead><tr><th style="width:220px">科目</th><th style="width:140px">金额(万元)</th><th>说明</th></tr></thead>
+                  <tbody>
+                    <tr v-for="r in plRows" :key="r.item">
+                      <td>{{ r.item }}</td>
+                      <td><span :class="{pos:r.amount>0, neg:r.amount<0}">{{ fmt0(r.amount) }}</span></td>
+                      <td>{{ r.note }}</td>
+                    </tr>
+                    <tr class="pl-summary">
+                      <td style="font-weight:700">合计</td>
+                      <td style="font-weight:700">{{ fmt0(plRows.reduce((a,r)=>a+(Number(r.amount)||0),0)) }}</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </el-tab-pane>
 
@@ -112,34 +122,36 @@
           <el-tab-pane label="税金拆解" name="tax">
             <div class="result-section" v-if="r.vat">
               <div class="section-hd">增值税链</div>
-              <el-table :data="vatRows" border size="small">
-                <el-table-column prop="item" label="科目" min-width="200" />
-                <el-table-column prop="amount" label="金额(万元)" align="right" width="140">
-                  <template #default="{row}">{{ fmt0(row.amount) }}</template>
-                </el-table-column>
-                <el-table-column prop="note" label="说明" min-width="200" />
-              </el-table>
+              <div class="plain-table-wrap">
+                <table class="plain-table">
+                  <thead><tr><th style="width:200px">科目</th><th style="width:140px">金额(万元)</th><th>说明</th></tr></thead>
+                  <tbody>
+                    <tr v-for="r in vatRows" :key="r.item">
+                      <td>{{ r.item }}</td>
+                      <td>{{ fmt0(r.amount) }}</td>
+                      <td>{{ r.note }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div class="result-section" v-if="r.taxes.land_settlement_detail">
               <div class="section-hd">土地增值税清算（三分法）</div>
-              <el-table :data="latRows" border size="small">
-                <el-table-column prop="type" label="类型" width="120" />
-                <el-table-column prop="revenue_ex_vat" label="收入(不含税)" align="right" width="120">
-                  <template #default="{row}">{{ fmt0(row.revenue_ex_vat) }}</template>
-                </el-table-column>
-                <el-table-column prop="deduction" label="扣除合计" align="right" width="120">
-                  <template #default="{row}">{{ fmt0(row.deduction) }}</template>
-                </el-table-column>
-                <el-table-column prop="excess_ratio" label="增值率" align="right" width="100">
-                  <template #default="{row}">{{ (row.excess_ratio*100).toFixed(2) }}%</template>
-                </el-table-column>
-                <el-table-column prop="rate" label="税率" align="right" width="80">
-                  <template #default="{row}">{{ (row.rate*100).toFixed(0) }}%</template>
-                </el-table-column>
-                <el-table-column prop="tax" label="应纳税额" align="right" width="120">
-                  <template #default="{row}"><span class="pos">{{ fmt0(row.tax) }}</span></template>
-                </el-table-column>
-              </el-table>
+              <div class="plain-table-wrap">
+                <table class="plain-table">
+                  <thead><tr><th style="width:120px">类型</th><th style="width:120px">收入(不含税)</th><th style="width:120px">扣除合计</th><th style="width:100px">增值率</th><th style="width:80px">税率</th><th style="width:120px">应纳税额</th></tr></thead>
+                  <tbody>
+                    <tr v-for="r in latRows" :key="r.type">
+                      <td>{{ r.type }}</td>
+                      <td>{{ fmt0(r.revenue_ex_vat) }}</td>
+                      <td>{{ fmt0(r.deduction) }}</td>
+                      <td>{{ (r.excess_ratio*100).toFixed(2) }}%</td>
+                      <td>{{ (r.rate*100).toFixed(0) }}%</td>
+                      <td><span class="pos">{{ fmt0(r.tax) }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <div class="lat-summary">
                 <span>预征: {{ fmt0(r.taxes.prepay?.land_prepay) }}万</span>
                 <span>清算找差: {{ fmt0(r.taxes.land_settlement_diff) }}万</span>
@@ -391,4 +403,12 @@ label { font-size:10px; color:#64748b; display:block; margin-bottom:2px; }
 .pos { color:#10b981; }
 .neg { color:#ef4444; }
 .empty-state { text-align:center; padding:80px; color:#94a3b8; }
+.plain-table-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+.plain-table { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+.plain-table th { background:#f8fafc; color:#64748b; font-weight:600; padding:8px 10px; text-align:right; border-bottom:1px solid #e2e8f0; }
+.plain-table th:first-child { text-align:center; }
+.plain-table td { padding:6px 10px; text-align:right; border-bottom:1px solid #f1f5f9; }
+.plain-table td:first-child { text-align:center; color:#64748b; }
+.plain-table tbody tr:hover { background:#f8fafc; }
+.pl-summary td { border-top:2px solid #e2e8f0; background:#f8fafc; }
 </style>
