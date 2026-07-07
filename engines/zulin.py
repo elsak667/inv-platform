@@ -118,6 +118,15 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
     loss_cf = tax_cfg.get("loss_carryforward", True)
     cf_years = tax_cfg.get("carryforward_years", 5)
 
+    vat_enabled = tax_cfg.get("vat_enabled", False)
+    vat_rate = tax_cfg.get("vat_rate", 0.09)
+    pt_enabled = tax_cfg.get("property_tax_enabled", False)
+    pt_rate = tax_cfg.get("property_tax_rate", 0.12)
+    sur_enabled = tax_cfg.get("surcharge_enabled", False)
+    sur_rate = tax_cfg.get("surcharge_rate", 0.12)
+    sd_enabled = tax_cfg.get("stamp_duty_enabled", False)
+    sd_rate = tax_cfg.get("stamp_duty_rate", 0.001)
+
     # ---------- 场景覆盖 ----------
     if scenario_id:
         sc = next((s for s in config.get("scenarios", []) if s["id"] == scenario_id), None)
@@ -225,6 +234,13 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         # --- 运营成本(付现) ---
         opex = round(rent * config["operating_cost_ratio"], 6)
 
+        # --- 增值税/房产税/附加/印花税 ---
+        vat = round(rent * vat_rate, 6) if vat_enabled else 0
+        surcharge = round(vat * sur_rate, 6) if vat_enabled and sur_enabled else 0
+        property_tax = round(rent * pt_rate, 6) if pt_enabled else 0
+        stamp_duty = round(rent * sd_rate, 6) if sd_enabled else 0
+        turnover_taxes = round(vat + surcharge + property_tax + stamp_duty, 6)
+
         # --- 装修支出(付现) ---
         renov_capex = 0
         if y == 1:  # year 2 = 2025, 首次装修
@@ -248,11 +264,11 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
 
         # --- 税前利润 ---
         if tax_shield:
-            # 税盾ON: 折旧+利息在税前扣除
-            profit_bt = round(rent - opex - total_dep - interest, 6)
+            # 税盾ON: 折旧+利息+流转税在税前扣除
+            profit_bt = round(rent - opex - total_dep - interest - property_tax - surcharge - stamp_duty, 6)
         else:
-            # 税盾OFF: 折旧+利息不扣除
-            profit_bt = round(rent - opex, 6)
+            # 税盾OFF: 折旧+利息不扣除, 流转税仍可扣除
+            profit_bt = round(rent - opex - property_tax - surcharge - stamp_duty, 6)
 
         # --- 所得税 ---
         if tax_shield and loss_cf:
@@ -272,8 +288,8 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         net_profit = round(profit_bt - income_tax, 6)
 
         # --- 现金流 ---
-        # 项目现金净流量 = 租金 - 运营成本 - 装修 - 利息 - 还本 - 所得税 - 自有资金
-        cf = round(rent - opex - renov_capex - interest - principal - income_tax, 6)
+        # 项目现金净流量 = 租金 - 运营成本 - 装修 - 利息 - 还本 - 流转税 - 所得税
+        cf = round(rent - opex - renov_capex - interest - principal - turnover_taxes - income_tax, 6)
 
         yearly.append({
             "year": year_num,
@@ -290,6 +306,11 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
             "loan_balance": loan_row["end_balance"],
             "profit_bt": profit_bt,
             "income_tax": income_tax,
+            "vat": vat,
+            "property_tax": property_tax,
+            "surcharge": surcharge,
+            "stamp_duty": stamp_duty,
+            "turnover_taxes": turnover_taxes,
             "net_profit": net_profit,
             "cash_flow": cf,
             "cumulative_loss": cum_loss if tax_shield and loss_cf else 0,
@@ -303,6 +324,10 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
     total_interest = round(sum(y["loan_interest"] for y in yearly), 4)
     total_principal = round(sum(y["loan_principal"] for y in yearly), 4)
     total_tax = round(sum(y["income_tax"] for y in yearly), 4)
+    total_vat = round(sum(y["vat"] for y in yearly), 4)
+    total_pt = round(sum(y["property_tax"] for y in yearly), 4)
+    total_sur = round(sum(y["surcharge"] for y in yearly), 4)
+    total_sd = round(sum(y["stamp_duty"] for y in yearly), 4)
     total_profit = round(sum(y["net_profit"] for y in yearly), 4)
 
     # 项目现金净流量(Excel: Y1= Equity+Interest, Y2+=租-成本)
@@ -353,6 +378,10 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         "total_interest": total_interest,
         "total_principal": total_principal,
         "total_tax": total_tax,
+        "total_vat": total_vat,
+        "total_property_tax": total_pt,
+        "total_surcharge": total_sur,
+        "total_stamp_duty": total_sd,
         "total_net_profit": total_profit,
         "sale_revenue": sale_revenue,
         "sale_profit": sale_profit,

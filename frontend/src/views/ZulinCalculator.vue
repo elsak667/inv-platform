@@ -34,11 +34,15 @@
           </el-row>
         </div>
         <div class="form-section">
-          <div class="section-hd">4. 装修</div>
+          <div class="section-hd">4. 装修 & 折旧摊销</div>
           <el-row :gutter="8">
             <el-col :span="8"><label>初始装修(万元)</label><el-input-number v-model="p.renovation.initial_cost" :min="0" style="width:100%" size="small" /></el-col>
             <el-col :span="8"><label>周期装修(万元)</label><el-input-number v-model="p.renovation.cycle_cost" :min="0" style="width:100%" size="small" /></el-col>
             <el-col :span="8"><label>装修频率(年)</label><el-input-number v-model="p.renovation.cycle_years" :min="1" style="width:100%" size="small" /></el-col>
+          </el-row>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12"><label>房屋折旧年限(年)</label><el-input-number v-model="p.depreciation.building_life" :min="10" :max="70" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>装修摊销年限(年)</label><el-input-number v-model="p.depreciation.decoration_life" :min="1" :max="20" style="width:100%" size="small" /></el-col>
           </el-row>
         </div>
         <div class="form-section">
@@ -60,6 +64,13 @@
           <el-row :gutter="8" style="margin-top:8px">
             <el-col :span="12"><el-checkbox v-model="p.tax.loss_carryforward">亏损结转</el-checkbox></el-col>
           </el-row>
+          <el-divider style="margin:10px 0" />
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <el-switch v-model="p.tax.vat_enabled" active-text="增值税 9%" inactive-text="增值税(免征)" size="small" />
+            <el-switch v-model="p.tax.property_tax_enabled" active-text="房产税 12%" inactive-text="房产税(免征)" size="small" />
+            <el-switch v-model="p.tax.surcharge_enabled" active-text="城建附加 12%" inactive-text="城建附加(免征)" size="small" />
+            <el-switch v-model="p.tax.stamp_duty_enabled" active-text="印花税 0.1%" inactive-text="印花税(免征)" size="small" />
+          </div>
         </div>
         <el-button type="primary" @click="runCalc" :loading="running" class="calc-btn">开始测算</el-button>
       </div>
@@ -77,6 +88,17 @@
               <div class="big-metric"><label>租金总收入</label><span class="big-val">{{ fmt0(result.total_rent) }}万</span></div>
               <div class="big-metric"><label>贷款总利息</label><span class="big-val">{{ fmt0(result.total_interest) }}万</span></div>
               <div class="big-metric"><label>装修总投入</label><span class="big-val">{{ fmt0(result.total_renovation) }}万</span></div>
+            </div>
+            <div class="chart-card full" style="margin-bottom:12px">
+              <div class="card-hd">税费明细</div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
+                <span>所得税: <b>{{ fmt0(result.total_tax) }}万</b></span>
+                <span v-if="result.total_vat">增值税: <b>{{ fmt0(result.total_vat) }}万</b></span>
+                <span v-if="result.total_property_tax">房产税: <b>{{ fmt0(result.total_property_tax) }}万</b></span>
+                <span v-if="result.total_surcharge">城建附加: <b>{{ fmt0(result.total_surcharge) }}万</b></span>
+                <span v-if="result.total_stamp_duty">印花税: <b>{{ fmt0(result.total_stamp_duty) }}万</b></span>
+                <span v-if="(result.total_vat||0)+(result.total_property_tax||0)+(result.total_surcharge||0)+(result.total_stamp_duty||0) > 0">流转税合计: <b>{{ fmt0((result.total_vat||0)+(result.total_property_tax||0)+(result.total_surcharge||0)+(result.total_stamp_duty||0)) }}万</b></span>
+              </div>
             </div>
             <div class="chart-row">
               <div class="chart-card full">
@@ -109,64 +131,81 @@
           </el-tab-pane>
 
           <el-tab-pane label="年度现金流" name="cashflow">
-            <el-table :data="yearlyRows" border size="small" max-height="600" style="width:100%">
-              <el-table-column prop="year" label="年份" width="60" align="center" />
-              <el-table-column prop="cal" label="年" width="60" align="center" />
-              <el-table-column prop="occ" label="出租率" width="80" align="right" />
-              <el-table-column prop="rent" label="租金" align="right" width="110" :formatter="fmtVal" />
-              <el-table-column prop="opex" label="运营" align="right" width="100" :formatter="fmtVal" />
-              <el-table-column prop="interest" label="利息" align="right" width="100" :formatter="fmtVal" />
-              <el-table-column prop="decor" label="装修" align="right" width="100" :formatter="fmtVal" />
-              <el-table-column prop="tax" label="所得税" align="right" width="100" :formatter="fmtVal" />
-              <el-table-column prop="repay" label="还本" align="right" width="100" :formatter="fmtVal" />
-              <el-table-column prop="cf" label="净现金流" align="right" width="120" :formatter="fmtVal" :cell-class-name="r => r.row.cf >= 0 ? 'pos' : 'neg'" />
-              <el-table-column prop="cum" label="累计CF" align="right" width="130" :formatter="fmtVal" :cell-class-name="r => r.row.cum >= 0 ? 'pos' : 'neg'" />
-            </el-table>
+            <div class="plain-table-wrap" style="max-height:600px;overflow:auto">
+              <table class="plain-table">
+                <thead><tr>
+                  <th>年份</th><th>年</th><th>出租率</th><th>租金(万)</th><th>运营</th><th>利息</th><th>装修</th><th>流转税</th><th>所得税</th><th>还本</th><th class="cf">净现金流</th><th class="cf">累计CF</th>
+                </tr></thead>
+                <tbody><tr v-for="r in yearlyRows" :key="r.year">
+                  <td>{{ r.year }}</td><td>{{ r.cal }}</td><td>{{ r.occ }}</td><td>{{ fmt0(r.rent) }}</td><td>{{ fmt0(r.opex) }}</td><td>{{ fmt0(r.interest) }}</td><td>{{ fmt0(r.decor) }}</td><td>{{ r.tt ? fmt0(r.tt) : '—' }}</td><td>{{ fmt0(r.tax) }}</td><td>{{ fmt0(r.repay) }}</td><td :class="r.cf >= 0 ? 'pos' : 'neg'">{{ fmt0(r.cf) }}</td><td :class="r.cum >= 0 ? 'pos' : 'neg'">{{ fmt0(r.cum) }}</td>
+                </tr></tbody>
+              </table>
+            </div>
           </el-tab-pane>
 
           <el-tab-pane label="方案对比" name="scenarios">
-            <el-table :data="scenarioRows" border size="small" style="width:100%;margin-bottom:16px">
-              <el-table-column prop="name" label="方案" width="120" />
-              <el-table-column prop="irr" label="IRR" align="right" width="100" />
-              <el-table-column prop="payback" label="回收期" align="right" width="100" />
-              <el-table-column prop="cum" label="累计CF(万)" align="right" width="120" />
-              <el-table-column prop="total_tax" label="所得税(万)" align="right" width="120" />
-              <el-table-column prop="total_rent" label="租金(万)" align="right" width="120" />
-              <el-table-column prop="total_interest" label="总利息(万)" align="right" width="120" />
-            </el-table>
+            <div class="plain-table-wrap" style="margin-bottom:16px">
+              <table class="plain-table">
+                <thead><tr>
+                  <th>方案</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th>
+                </tr></thead>
+                <tbody><tr v-for="s in scenarioRows" :key="s.name">
+                  <td>{{ s.name }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
+                </tr></tbody>
+              </table>
+            </div>
 
             <div class="section-hd" style="margin:20px 0 12px">敏感性分析</div>
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px">
-              <el-row :gutter="8" style="margin-bottom:8px">
-                <el-col :span="6"><label>分析参数</label>
-                  <el-select v-model="sensParam" size="small" style="width:100%">
-                    <el-option label="稳定期出租率" value="rental.occupancy_stable" />
-                    <el-option label="满租月租金(万元)" value="rental.monthly_rent_full" />
-                    <el-option label="贷款利率" value="loan.rate" />
-                    <el-option label="租金涨幅" value="rental.growth_rate" />
-                    <el-option label="运营成本占比" value="operating_cost_ratio" />
-                  </el-select>
-                </el-col>
-                <el-col :span="6"><label>最小值</label><el-input-number v-model="sensMin" :min="0" :step="0.01" size="small" style="width:100%" /></el-col>
-                <el-col :span="6"><label>最大值</label><el-input-number v-model="sensMax" :min="0" :step="0.01" size="small" style="width:100%" /></el-col>
-                <el-col :span="6"><label>步长</label><el-input-number v-model="sensStep" :min="0.001" :step="0.01" size="small" style="width:100%" /></el-col>
-              </el-row>
-              <el-row :gutter="8">
-                <el-col :span="6"><el-button type="primary" @click="runSensitivity" :loading="sensRunning" size="small">运行</el-button></el-col>
-              </el-row>
+            <div class="tornado-config">
+              <div class="tornado-row">
+                <span class="tornado-label">稳定期出租率</span>
+                <span class="tornado-base">{{ pct(p.rental.occupancy_stable) }}</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['rental.occupancy_stable']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">满租月租金</span>
+                <span class="tornado-base">{{ fmt0(p.rental.monthly_rent_full) }}万</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['rental.monthly_rent_full']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">运营成本占比</span>
+                <span class="tornado-base">{{ pct(p.operating_cost_ratio) }}</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['operating_cost_ratio']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">贷款利率</span>
+                <span class="tornado-base">{{ pct(p.loan.rate) }}</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['loan.rate']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">租金涨幅</span>
+                <span class="tornado-base">{{ pct(p.rental.growth_rate) }}</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['rental.growth_rate']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">收购总价</span>
+                <span class="tornado-base">{{ fmt0(p.acquisition.total_price) }}万</span>
+                <label>±</label>
+                <el-input-number v-model="tornadoPcts['acquisition.total_price']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <label>%</label>
+              </div>
+              <el-button type="primary" @click="runTornado" :loading="tornadoRunning" size="small" class="tornado-btn">刷新 Tornado</el-button>
             </div>
 
-            <div v-if="sensResults.length" class="chart-card full" style="margin-bottom:12px">
-              <div class="card-hd">敏感性分析 — IRR vs {{ sensParamLabel }}</div>
-              <div ref="sensChartRef" style="width:100%;height:280px"></div>
+            <div v-if="tornadoData" class="chart-card full" style="margin-bottom:12px">
+              <div class="card-hd">Tornado 图 — 各参数对 IRR 的影响（基准: {{ tornadoBaseIrr }}%）</div>
+              <div ref="tornadoChartRef" style="width:100%;height:340px"></div>
             </div>
-            <el-table v-if="sensResults.length" :data="sensResults" border size="small" style="width:100%">
-              <el-table-column prop="param" :label="sensParamLabel" align="right" width="120" />
-              <el-table-column prop="irr" label="IRR" align="right" width="100" />
-              <el-table-column prop="payback" label="回收期" align="right" width="100" />
-              <el-table-column prop="cum" label="累计CF(万)" align="right" width="120" />
-              <el-table-column prop="total_tax" label="所得税(万)" align="right" width="120" />
-            </el-table>
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -187,12 +226,19 @@ export default {
       running: false,
       activeTab: 'overview',
       cfChart: null, taxChart: null,
-      // 敏感性分析
-      sensParam: 'rental.occupancy_stable',
-      sensMin: 0.7, sensMax: 0.95, sensStep: 0.05,
-      sensResults: [],
-      sensRunning: false,
-      sensChart: null,
+      shieldCache: null,
+      tornadoPcts: {
+        'rental.occupancy_stable': 10,
+        'rental.monthly_rent_full': 10,
+        'operating_cost_ratio': 10,
+        'loan.rate': 10,
+        'rental.growth_rate': 10,
+        'acquisition.total_price': 10,
+      },
+      tornadoData: [],
+      tornadoBaseIrr: null,
+      tornadoChart: null,
+      tornadoRunning: false,
     }
   },
   computed: {
@@ -209,20 +255,11 @@ export default {
         interest: r.loan_interest,
         decor: r.renovation_capex,
         tax: r.income_tax,
+        tt: r.turnover_taxes || 0,
         repay: r.loan_principal,
         cf: cumCf[i] - (cumCf[i - 1] || 0),
         cum: cumCf[i] || 0,
       }))
-    },
-    sensParamLabel() {
-      const labels = {
-        'rental.occupancy_stable': '出租率',
-        'rental.monthly_rent_full': '月租金(万)',
-        'loan.rate': '利率',
-        'rental.growth_rate': '涨幅',
-        'operating_cost_ratio': '运营占比',
-      }
-      return labels[this.sensParam] || this.sensParam
     },
     scenarioRows() {
       const ps = this.allPlans?.plans || []
@@ -260,7 +297,9 @@ export default {
         this.activeTab = 'overview'
         await this.$nextTick()
         this.drawCfChart()
+        this.shieldCache = null
         this.runShieldCompare()
+        this.runTornado()
       } catch (e) { this.$message.error(e.response?.data?.detail || e.message) }
       this.running = false
     },
@@ -280,14 +319,21 @@ export default {
         ])
         this.shieldOn = onRes
         this.shieldOff = offRes
-        this.drawTaxChart()
+        this.shieldCache = { on: onRes, off: offRes }
+        if (this.activeTab === 'taxshield') this.drawTaxChart()
       } catch (e) { console.error('税盾对比失败', e) }
     },
     redrawOnTab() {
       this.$nextTick(() => {
         if (this.activeTab === 'overview') this.drawCfChart()
-        if (this.activeTab === 'taxshield') this.drawTaxChart()
+        if (this.activeTab === 'taxshield') {
+          if (this.shieldCache) this.drawTaxChart()
+          else this.runShieldCompare()
+        }
       })
+      if (this.activeTab === 'scenarios' && this.tornadoData.length) {
+        setTimeout(() => this.drawTornadoChart(), 100)
+      }
     },
     drawCfChart() {
       const el = this.$refs.cfChartRef
@@ -319,43 +365,91 @@ export default {
     _getNested(obj, path) {
       return path.split('.').reduce((o, k) => (o || {})[k], obj)
     },
-    async runSensitivity() {
-      this.sensRunning = true
+    async runTornado() {
+      if (!this.result) return
+      this.tornadoRunning = true
+      this.tornadoBaseIrr = this.result.irr_pct
+      const items = [
+        { key: 'rental.occupancy_stable', label: '稳定期出租率' },
+        { key: 'rental.monthly_rent_full', label: '满租月租金' },
+        { key: 'operating_cost_ratio', label: '运营成本占比' },
+        { key: 'loan.rate', label: '贷款利率' },
+        { key: 'rental.growth_rate', label: '租金涨幅' },
+        { key: 'acquisition.total_price', label: '收购总价' },
+      ]
       const results = []
-      for (let v = this.sensMin; v <= this.sensMax + this.sensStep * 0.5; v += this.sensStep) {
-        const p = JSON.parse(JSON.stringify(this.p))
-        this._setNested(p, this.sensParam, v)
+      for (const item of items) {
+        const pct = this.tornadoPcts[item.key] || 10
+        const baseVal = this._getNested(this.p, item.key)
+        if (baseVal == null || baseVal === 0) continue
         try {
-          const r = await api.calculate('zulin', { ...p, meta: this.cfg.meta })
-          results.push({ param: v, irr: r.irr_pct + '%', payback: (r.payback_year || '—') + '年', cum: this.fmt0(r.cumulative_cash_flow), total_tax: this.fmt0(r.total_tax), _irr: r.irr_pct, _param: v })
-        } catch (e) { console.error('敏感性分析失败', e) }
+          const pLow = JSON.parse(JSON.stringify(this.p))
+          this._setNested(pLow, item.key, baseVal * (1 - pct / 100))
+          const rLow = await api.calculate('zulin', { ...pLow, meta: this.cfg.meta })
+          const pHigh = JSON.parse(JSON.stringify(this.p))
+          this._setNested(pHigh, item.key, baseVal * (1 + pct / 100))
+          const rHigh = await api.calculate('zulin', { ...pHigh, meta: this.cfg.meta })
+          const irrLow = rLow.irr_pct, irrHigh = rHigh.irr_pct
+          results.push({ label: item.label, key: item.key, irrLow, irrHigh, range: Math.abs(irrHigh - irrLow) })
+        } catch (e) { console.error('Tornado error:', item.key, e) }
       }
-      this.sensResults = results
-      this.sensRunning = false
-      this.$nextTick(() => this.drawSensChart())
+      results.sort((a, b) => b.range - a.range)
+      this.tornadoData = results
+      this.tornadoRunning = false
+      this.$nextTick(() => this.drawTornadoChart())
     },
-    drawSensChart() {
-      const el = this.$refs.sensChartRef
-      if (!el || !this.sensResults.length) return
-      if (this.sensChart) this.sensChart.dispose()
-      this.sensChart = echarts.init(el)
-      this.sensChart.setOption({
-        tooltip: { trigger: 'axis', valueFormatter: v => v != null ? v + '%' : '' },
-        grid: { left: 60, right: 24, top: 24, bottom: 36 },
-        xAxis: { type: 'category', data: this.sensResults.map(r => r._param), axisLabel: { rotate: 45, fontSize: 10 } },
-        yAxis: { type: 'value', axisLabel: { formatter: '{value}%' } },
-        series: [{ type: 'line', data: this.sensResults.map(r => r._irr), smooth: true, lineStyle: { width: 2, color: '#8b5cf6' }, markLine: { symbol: 'none', lineStyle: { type: 'dashed', color: '#94a3b8' }, data: [{ yAxis: this.result?.irr_pct || 5.5, label: { formatter: `基准: ${this.result?.irr_pct || 5.5}%`, position: 'insideEndTop', color: '#94a3b8', fontSize: 11 } }] } }],
+    drawTornadoChart() {
+      const el = this.$refs.tornadoChartRef
+      if (!el || !this.tornadoData?.length) return
+      if (!el.clientHeight) { setTimeout(() => this.drawTornadoChart(), 100); return }
+      if (this.tornadoChart) this.tornadoChart.dispose()
+      this.tornadoChart = echarts.init(el)
+      const base = this.tornadoBaseIrr
+      const names = this.tornadoData.map(d => d.label)
+      const leftData = this.tornadoData.map(d => {
+        const low = Math.min(d.irrLow, d.irrHigh)
+        return Math.min(0, +(low - base).toFixed(4))
       })
-      this.sensChart.resize()
+      const rightData = this.tornadoData.map(d => {
+        const high = Math.max(d.irrLow, d.irrHigh)
+        return Math.max(0, +(high - base).toFixed(4))
+      })
+      const chartData = this.tornadoData
+      const chartBase = base
+      this.tornadoChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter(params) {
+            const p = params[0]
+            const d = chartData[p.dataIndex]
+            if (!d) return ''
+            const low = Math.min(d.irrLow, d.irrHigh)
+            const high = Math.max(d.irrLow, d.irrHigh)
+            return `${d.label}<br/>IRR 范围: ${low.toFixed(2)}% → ${high.toFixed(2)}%<br/>基准 IRR: ${chartBase.toFixed(2)}%<br/>影响幅度: ${(high - low).toFixed(2)}%`
+          }
+        },
+        legend: { data: ['不利方向', '有利方向'], bottom: 0, textStyle: { fontSize: 11 } },
+        grid: { left: 100, right: 80, top: 12, bottom: 48 },
+        xAxis: { type: 'value', axisLabel: { formatter: v => (v + chartBase).toFixed(1) + '%' } },
+        yAxis: { type: 'category', data: names, axisLabel: { fontSize: 12, fontWeight: 600 } },
+        series: [
+          { name: '不利方向', type: 'bar', stack: 't', data: leftData, itemStyle: { color: '#f43f5e', borderRadius: [4,0,0,4] } },
+          { name: '有利方向', type: 'bar', stack: 't', data: rightData, itemStyle: { color: '#3b82f6', borderRadius: [0,4,4,0] } },
+        ],
+      })
+      this.tornadoChart.resize()
     },
     drawTaxChart() {
       const el = this.$refs.taxChartRef
-      if (!el || !this.shieldOn?.yearly?.length) return
+      const sd = this.shieldCache || {}
+      const on = sd.on || this.shieldOn
+      const off = sd.off || this.shieldOff
+      if (!el || !on?.yearly?.length || el.clientHeight === 0) return
       if (this.taxChart) this.taxChart.dispose()
       this.taxChart = echarts.init(el)
-      const years = this.shieldOn.yearly.map(r => r.calendar_year)
-      const onTax = this.shieldOn.yearly.map(r => Math.round(r.income_tax))
-      const offTax = this.shieldOff?.yearly?.map(r => Math.round(r.income_tax)) || []
+      const years = on.yearly.map(r => r.calendar_year)
+      const onTax = on.yearly.map(r => Math.round(r.income_tax))
+      const offTax = off?.yearly?.map(r => Math.round(r.income_tax)) || []
       this.taxChart.setOption({
         tooltip: { trigger: 'axis', valueFormatter: v => v != null ? this.fmt0(v) + '万' : '' },
         legend: { data: ['税盾ON 所得税', '税盾OFF 所得税'], bottom: 0, textStyle: { fontSize: 11 } },
@@ -400,4 +494,18 @@ label { font-size:10px; color:#64748b; display:block; margin-bottom:2px; }
 .pos { color:#10b981; font-weight:600; }
 .neg { color:#ef4444; font-weight:600; }
 .empty-state { text-align:center; padding:80px; color:#94a3b8; }
+.plain-table-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+.plain-table { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+.plain-table th { background:#f8fafc; color:#64748b; font-weight:600; padding:8px 10px; text-align:right; border-bottom:1px solid #e2e8f0; }
+.plain-table th:first-child { text-align:center; }
+.plain-table td { padding:6px 10px; text-align:right; border-bottom:1px solid #f1f5f9; }
+.plain-table td:first-child { text-align:center; color:#64748b; }
+.plain-table tbody tr:hover { background:#f8fafc; }
+.tornado-config { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.tornado-row { display:flex; align-items:center; gap:4px; background:#f8fafc; border-radius:6px; padding:4px 10px; }
+.tornado-label { font-size:12px; font-weight:600; color:#1e293b; white-space:nowrap; }
+.tornado-base { font-size:11px; color:#64748b; margin-right:4px; }
+.tornado-row label { font-size:11px; color:#94a3b8; margin:0; display:inline; }
+.tornado-input { width:68px !important; }
+.tornado-btn { margin-left:auto; }
 </style>

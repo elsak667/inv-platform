@@ -88,12 +88,21 @@ loan:
 # ============ 税费 ============
 tax:
   income_tax_rate: 0.25      # 所得税率
-  tax_shield: true           # 税盾开关: true=折旧/利息在税前扣除, false=不扣除
-  loss_carryforward: false   # 亏损结转: true=亏损抵扣未来利润(结转5年), false=每年独立计税
-  carryforward_years: 5      # 亏损结转年限(税法5年, -1=无限)
-  # 公租房税收减免
-  vat_exempt: true
-  property_tax_exempt: true
+  tax_shield: true           # 税盾开关
+  loss_carryforward: false   # 亏损结转
+  carryforward_years: 5      # 结转年限
+  # 增值税: 9%, 公租房默认为免征(关闭)
+  vat_enabled: false
+  vat_rate: 0.09
+  # 房产税从租计征: 12%, 公租房默认免征
+  property_tax_enabled: false
+  property_tax_rate: 0.12
+  # 城建税+教育附加: 增值税的 12%, 增值税关闭时自动为0
+  surcharge_enabled: false
+  surcharge_rate: 0.12
+  # 印花税: 租金收入的 0.1%
+  stamp_duty_enabled: false
+  stamp_duty_rate: 0.001
 
 # ============ 期末出售(可选) ============
 sale:
