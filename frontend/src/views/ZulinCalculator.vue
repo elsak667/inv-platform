@@ -49,7 +49,7 @@
           <div class="section-hd">5. 融资</div>
           <el-row :gutter="8">
             <el-col :span="12"><label>年利率</label><el-input-number v-model="p.loan.rate" :min="0" :max="0.15" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
-            <el-col :span="12"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="1" :max="30" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="-30" :max="30" style="width:100%" size="small" /></el-col>
           </el-row>
           <el-row :gutter="8" style="margin-top:8px">
             <el-col :span="12"><label>宽限期(年)</label><el-input-number v-model="p.loan.grace_years" :min="0" :max="5" style="width:100%" size="small" /></el-col>
@@ -147,10 +147,11 @@
             <div class="plain-table-wrap" style="margin-bottom:16px">
               <table class="plain-table">
                 <thead><tr>
-                  <th>方案</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th>
+                  <th>方案</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th><th style="width:30px"></th>
                 </tr></thead>
                 <tbody><tr v-for="s in scenarioRows" :key="s.name">
                   <td>{{ s.name }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
+                  <td><el-button type="danger" size="mini" @click="deleteScenario(s.name)" title="删除">×</el-button></td>
                 </tr></tbody>
               </table>
             </div>
@@ -161,42 +162,42 @@
                 <span class="tornado-label">稳定期出租率</span>
                 <span class="tornado-base">{{ pct(p.rental.occupancy_stable) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.occupancy_stable']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.occupancy_stable']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">满租月租金</span>
                 <span class="tornado-base">{{ fmt0(p.rental.monthly_rent_full) }}万</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.monthly_rent_full']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.monthly_rent_full']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">运营成本占比</span>
                 <span class="tornado-base">{{ pct(p.operating_cost_ratio) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['operating_cost_ratio']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['operating_cost_ratio']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">贷款利率</span>
                 <span class="tornado-base">{{ pct(p.loan.rate) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['loan.rate']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['loan.rate']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">租金涨幅</span>
                 <span class="tornado-base">{{ pct(p.rental.growth_rate) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.growth_rate']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.growth_rate']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">收购总价</span>
                 <span class="tornado-base">{{ fmt0(p.acquisition.total_price) }}万</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['acquisition.total_price']" :min="1" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['acquisition.total_price']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <el-button type="primary" @click="runTornado" :loading="tornadoRunning" size="small" class="tornado-btn">刷新 Tornado</el-button>
@@ -223,6 +224,8 @@ export default {
       loading: true, cfg: null, p: null,
       result: null, shieldOn: null, shieldOff: null,
       allPlans: null,
+      scenarioPlans: [],
+      deletedScenarios: [],
       running: false,
       activeTab: 'overview',
       cfChart: null, taxChart: null,
@@ -262,8 +265,7 @@ export default {
       }))
     },
     scenarioRows() {
-      const ps = this.allPlans?.plans || []
-      return ps.map(s => ({
+      return this.scenarioPlans.map(s => ({
         name: s.scenario,
         irr: s.irr_pct + '%',
         payback: (s.payback_year || '—') + '年',
@@ -295,9 +297,9 @@ export default {
         const params = { ...this.p, meta: this.cfg.meta }
         this.result = await api.calculate('zulin', params)
         this.activeTab = 'overview'
+        this.shieldCache = null
         await this.$nextTick()
         this.drawCfChart()
-        this.shieldCache = null
         this.runShieldCompare()
         this.runTornado()
       } catch (e) { this.$message.error(e.response?.data?.detail || e.message) }
@@ -307,7 +309,12 @@ export default {
       try {
         const params = { ...this.p, meta: this.cfg.meta, scenarios: this.cfg.scenarios }
         this.allPlans = await api.calculate('zulin', params)
+        this.scenarioPlans = (this.allPlans?.plans || []).filter(p => !this.deletedScenarios.includes(p.scenario))
       } catch (e) { console.error('方案对比失败', e) }
+    },
+    deleteScenario(name) {
+      this.deletedScenarios.push(name)
+      this.scenarioPlans = this.scenarioPlans.filter(p => p.scenario !== name)
     },
     async runShieldCompare() {
       try {
