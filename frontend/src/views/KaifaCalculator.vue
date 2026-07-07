@@ -275,6 +275,7 @@ export default {
       const el = this.$refs.cfChartRef
       if (!el || !this.cf.project_cf?.length) return
       if (this.cfChart) this.cfChart.dispose()
+      ;(() => { const _a = el.addEventListener; el.addEventListener = (t, h, o) => _a.call(el, t, h, (t === 'wheel' || t === 'mousewheel') && (!o || o.passive === undefined) ? { ...(typeof o === 'object' ? o : {}), passive: false } : o) })()
       this.cfChart = echarts.init(el)
       const months = this.cf.project_cf.map((_, i) => `第${i}月`)
       const project = this.cf.project_cf.map(v => Math.round(v))
