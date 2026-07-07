@@ -144,17 +144,22 @@
           </el-tab-pane>
 
           <el-tab-pane label="方案对比" name="scenarios">
+            <div style="margin-bottom:12px">
+              <el-button type="primary" size="small" @click="saveScenario" :disabled="!result">+ 保存当前参数为方案</el-button>
+              <el-button size="small" @click="refreshScenarios" :disabled="!savedScenarios.length">刷新对比</el-button>
+            </div>
             <div class="plain-table-wrap" style="margin-bottom:16px">
               <table class="plain-table">
                 <thead><tr>
-                  <th>方案</th><th>说明</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th><th style="width:30px"></th>
+                  <th>方案</th><th>IRR</th><th>回收期</th><th>累计CF(万)</th><th>所得税(万)</th><th>租金(万)</th><th>总利息(万)</th><th style="width:30px"></th>
                 </tr></thead>
                 <tbody><tr v-for="s in scenarioRows" :key="s.name">
-                  <td>{{ s.name }}</td><td>{{ s.cond }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
-                  <td><el-button type="danger" size="mini" @click="deleteScenario(s.name)" title="删除">×</el-button></td>
+                  <td>{{ s.name }}</td><td>{{ s.irr }}</td><td>{{ s.payback }}</td><td>{{ s.cum }}</td><td>{{ s.total_tax }}</td><td>{{ s.total_rent }}</td><td>{{ s.total_interest }}</td>
+                  <td><el-button type="danger" size="mini" @click="deleteScenario(s.idx)" title="删除">×</el-button></td>
                 </tr></tbody>
               </table>
             </div>
+            <div v-if="!savedScenarios.length" style="color:#999;font-size:13px">尚未保存任何方案。调整参数后点击上方按钮添加。</div>
 
             <div class="section-hd" style="margin:20px 0 12px">敏感性分析</div>
             <div class="tornado-config">
@@ -224,9 +229,7 @@ export default {
       loading: true, cfg: null, p: null,
       result: null, shieldOn: null, shieldOff: null,
       allPlans: null,
-      scenarioDefs: [],
-      scenarioPlans: [],
-      deletedScenarios: [],
+      savedScenarios: [],
       running: false,
       activeTab: 'overview',
       cfChart: null, taxChart: null,
@@ -266,18 +269,17 @@ export default {
       }))
     },
     scenarioRows() {
-      return this.scenarioPlans.map(s => {
-        const def = this.scenarioDefs.find(d => d.id === s.scenario)
-        const cond = def ? def.name : ''
+      return this.savedScenarios.map((s, i) => {
+        const r = s.result
         return {
-          name: s.scenario,
-          cond,
-          irr: s.irr_pct + '%',
-          payback: (s.payback_year || '—') + '年',
-          cum: this.fmt0(s.cumulative_cash_flow),
-          total_tax: this.fmt0(s.total_tax),
-          total_rent: this.fmt0(s.total_rent),
-          total_interest: this.fmt0(s.total_interest),
+          idx: i,
+          name: s.name,
+          irr: r ? r.irr_pct + '%' : '—',
+          payback: r ? (r.payback_year || '—') + '年' : '—',
+          cum: r ? this.fmt0(r.cumulative_cash_flow) : '—',
+          total_tax: r ? this.fmt0(r.total_tax) : '—',
+          total_rent: r ? this.fmt0(r.total_rent) : '—',
+          total_interest: r ? this.fmt0(r.total_interest) : '—',
         }
       })
     },
@@ -286,10 +288,8 @@ export default {
     try {
       this.cfg = await api.getTemplate('zulin')
       const { meta, scenarios, ...rest } = this.cfg
-      this.scenarioDefs = scenarios || []
       this.p = JSON.parse(JSON.stringify(rest))
       await this.runCalc()
-      this.fetchScenarios()
     } catch (e) { this.$message.error(String(e)) }
     this.loading = false
   },
@@ -312,16 +312,31 @@ export default {
       } catch (e) { this.$message.error(e.response?.data?.detail || e.message) }
       this.running = false
     },
-    async fetchScenarios() {
-      try {
-        const params = { ...this.p, meta: this.cfg.meta, scenarios: this.cfg.scenarios }
-        this.allPlans = await api.calculate('zulin', params)
-        this.scenarioPlans = (this.allPlans?.plans || []).filter(p => !this.deletedScenarios.includes(p.scenario))
-      } catch (e) { console.error('方案对比失败', e) }
+    saveScenario() {
+      const name = prompt('方案名称（如：租金涨10%、出租率80%）')
+      if (!name) return
+      const params = JSON.parse(JSON.stringify(this.p))
+      this.savedScenarios.push({ name, params, result: null })
+      this.runScenario(this.savedScenarios.length - 1)
+      this.activeTab = 'scenarios'
     },
-    deleteScenario(name) {
-      this.deletedScenarios.push(name)
-      this.scenarioPlans = this.scenarioPlans.filter(p => p.scenario !== name)
+    async refreshScenarios() {
+      for (let i = 0; i < this.savedScenarios.length; i++) {
+        await this.runScenario(i)
+      }
+    },
+    async runScenario(idx) {
+      const s = this.savedScenarios[idx]
+      if (!s) return
+      try {
+        s.result = await api.calculate('zulin', { ...s.params, meta: this.cfg.meta })
+      } catch (e) {
+        console.error('方案失败', s.name, e)
+        this.$message.error('方案"' + s.name + '"计算失败')
+      }
+    },
+    deleteScenario(idx) {
+      this.savedScenarios.splice(idx, 1)
     },
     async runShieldCompare() {
       try {
