@@ -253,30 +253,26 @@
                     <el-option v-for="p in result.plans" :key="p.plan" :label="p.plan" :value="p.plan" />
                   </el-select>
                 </div>
-                <el-table :data="currentPlan.yearly" size="small" show-summary :summary-method="getSummaries"
-                  :header-cell-style="{ background:'#f8fafc', color:'#334155', fontWeight:600 }"
-                  :cell-style="{ padding:'8px 0' }"
-                  style="width:100%">
-                  <el-table-column prop="year" label="年份" width="60" align="center">
-                    <template #default="{ row }">
-                      <span style="font-weight:600;color:#1a56db">Y{{ row.year }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="rent_income" label="租金收入" :formatter="fmt" align="right" />
-                  <el-table-column prop="tax" label="税费" :formatter="fmt" align="right" />
-                  <el-table-column prop="depreciation" label="折旧" :formatter="fmt" align="right" />
-                  <el-table-column prop="opex" label="运营成本" :formatter="fmt" align="right" />
-                  <el-table-column prop="finance_cost" label="财务成本" :formatter="fmt" align="right" />
-                  <el-table-column prop="operating_profit" label="运营毛利" :formatter="fmt" align="right">
-                    <template #default="{ row }">
-                      <span :style="{ color: row.operating_profit >= 0 ? '#10b981' : '#ef4444', fontWeight:600 }">
-                        {{ fmt(null,null,row.operating_profit) }}
-                      </span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="sale_revenue" label="出售收回" :formatter="fmt" align="right" />
-                  <el-table-column prop="loan_balance" label="贷款余额" :formatter="fmt" align="right" />
-                </el-table>
+                <div class="plain-table-wrap">
+                  <table class="plain-table">
+                    <thead><tr>
+                      <th>年份</th><th>租金收入</th><th>税费</th><th>折旧</th><th>运营成本</th><th>财务成本</th><th>运营毛利</th><th>出售收回</th><th>贷款余额</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr v-for="r in currentPlan.yearly" :key="r.year">
+                        <td style="font-weight:600;color:#1a56db">Y{{ r.year }}</td>
+                        <td>{{ fmt(null,null,r.rent_income) }}</td>
+                        <td>{{ fmt(null,null,r.tax) }}</td>
+                        <td>{{ fmt(null,null,r.depreciation) }}</td>
+                        <td>{{ fmt(null,null,r.opex) }}</td>
+                        <td>{{ fmt(null,null,r.finance_cost) }}</td>
+                        <td :style="{ color: r.operating_profit >= 0 ? '#10b981' : '#ef4444', fontWeight:600 }">{{ fmt(null,null,r.operating_profit) }}</td>
+                        <td>{{ fmt(null,null,r.sale_revenue) }}</td>
+                        <td>{{ fmt(null,null,r.loan_balance) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <!-- 分析报告 -->
@@ -963,4 +959,11 @@ export default {
   font-size: 14px;
   margin: 0;
 }
+.plain-table-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px; background:#fff; }
+.plain-table { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+.plain-table th { background:#f8fafc; color:#64748b; font-weight:600; padding:8px 10px; text-align:right; border-bottom:1px solid #e2e8f0; }
+.plain-table th:first-child { text-align:center; }
+.plain-table td { padding:6px 10px; text-align:right; border-bottom:1px solid #f1f5f9; }
+.plain-table td:first-child { text-align:center; color:#64748b; }
+.plain-table tbody tr:hover { background:#f8fafc; }
 </style>

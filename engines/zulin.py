@@ -118,13 +118,9 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
     loss_cf = tax_cfg.get("loss_carryforward", True)
     cf_years = tax_cfg.get("carryforward_years", 5)
 
-    vat_enabled = tax_cfg.get("vat_enabled", False)
     vat_rate = tax_cfg.get("vat_rate", 0.09)
-    pt_enabled = tax_cfg.get("property_tax_enabled", False)
     pt_rate = tax_cfg.get("property_tax_rate", 0.12)
-    sur_enabled = tax_cfg.get("surcharge_enabled", False)
     sur_rate = tax_cfg.get("surcharge_rate", 0.12)
-    sd_enabled = tax_cfg.get("stamp_duty_enabled", False)
     sd_rate = tax_cfg.get("stamp_duty_rate", 0.001)
 
     # ---------- 场景覆盖 ----------
@@ -235,10 +231,10 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         opex = round(rent * config["operating_cost_ratio"], 6)
 
         # --- 增值税/房产税/附加/印花税 ---
-        vat = round(rent * vat_rate, 6) if vat_enabled else 0
-        surcharge = round(vat * sur_rate, 6) if vat_enabled and sur_enabled else 0
-        property_tax = round(rent * pt_rate, 6) if pt_enabled else 0
-        stamp_duty = round(rent * sd_rate, 6) if sd_enabled else 0
+        vat = round(rent * vat_rate, 6) if vat_rate > 0 else 0
+        surcharge = round(vat * sur_rate, 6) if vat_rate > 0 and sur_rate > 0 else 0
+        property_tax = round(rent * pt_rate, 6) if pt_rate > 0 else 0
+        stamp_duty = round(rent * sd_rate, 6) if sd_rate > 0 else 0
         turnover_taxes = round(vat + surcharge + property_tax + stamp_duty, 6)
 
         # --- 装修支出(付现) ---

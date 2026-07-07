@@ -65,12 +65,12 @@
             <el-col :span="12"><el-checkbox v-model="p.tax.loss_carryforward">亏损结转</el-checkbox></el-col>
           </el-row>
           <el-divider style="margin:10px 0" />
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-            <el-switch v-model="p.tax.vat_enabled" active-text="增值税 9%" inactive-text="增值税(免征)" size="small" />
-            <el-switch v-model="p.tax.property_tax_enabled" active-text="房产税 12%" inactive-text="房产税(免征)" size="small" />
-            <el-switch v-model="p.tax.surcharge_enabled" active-text="城建附加 12%" inactive-text="城建附加(免征)" size="small" />
-            <el-switch v-model="p.tax.stamp_duty_enabled" active-text="印花税 0.1%" inactive-text="印花税(免征)" size="small" />
-          </div>
+          <el-row :gutter="8">
+            <el-col :span="6"><label>增值税率</label><el-input-number v-model="p.tax.vat_rate" :min="0" :max="0.2" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="6"><label>房产税率</label><el-input-number v-model="p.tax.property_tax_rate" :min="0" :max="0.2" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="6"><label>城建附加率</label><el-input-number v-model="p.tax.surcharge_rate" :min="0" :max="0.2" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+            <el-col :span="6"><label>印花税率</label><el-input-number v-model="p.tax.stamp_duty_rate" :min="0" :max="0.01" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+          </el-row>
         </div>
         <el-button type="primary" @click="runCalc" :loading="running" class="calc-btn">开始测算</el-button>
       </div>

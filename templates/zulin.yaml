@@ -91,18 +91,14 @@ tax:
   tax_shield: true           # 税盾开关
   loss_carryforward: false   # 亏损结转
   carryforward_years: 5      # 结转年限
-  # 增值税: 9%, 公租房默认为免征(关闭)
-  vat_enabled: false
-  vat_rate: 0.09
-  # 房产税从租计征: 12%, 公租房默认免征
-  property_tax_enabled: false
-  property_tax_rate: 0.12
-  # 城建税+教育附加: 增值税的 12%, 增值税关闭时自动为0
-  surcharge_enabled: false
-  surcharge_rate: 0.12
-  # 印花税: 租金收入的 0.1%
-  stamp_duty_enabled: false
-  stamp_duty_rate: 0.001
+  # 增值税: 9%, 填0即免征(公租房默认免征)
+  vat_rate: 0
+  # 房产税从租计征: 12%, 填0即免征(公租房默认免征)
+  property_tax_rate: 0
+  # 城建税+教育附加: 增值税的 12%, 填0即免征
+  surcharge_rate: 0
+  # 印花税: 租金收入的 0.1%, 填0即免征
+  stamp_duty_rate: 0
 
 # ============ 期末出售(可选) ============
 sale:
