@@ -32,13 +32,39 @@ app.config.errorHandler = (err, vm, info) => {
 window.addEventListener('error', e => {
   if (e.message?.startsWith('ResizeObserver loop')) return
   console.error('[window-error]', e.error?.stack || e.error || e.message)
-  // Mark the event as handled so the default handler still shows it
 })
 window.addEventListener('unhandledrejection', e => {
   console.error('[unhandled]', e.reason?.stack || e.reason)
 })
+
+const origWarn = console.warn
+console.warn = (...args) => {
+  if (args[0]?.includes?.('non-passive event listener')) return
+  origWarn.call(console, ...args)
+}
+
 app.use(router)
 app.use(ElementPlus)
+
+// Trace component creation to catch which component fails
+let compDepth = 0
+app.mixin({
+  beforeCreate() {
+    compDepth++
+    const name = this.$options.name || this.$options.__name || '?'
+    if (name.startsWith('El')) console.log('[trace]', '  '.repeat(Math.min(compDepth, 10)), name)
+  },
+  created() {
+    compDepth--
+    const name = this.$options.name || this.$options.__name || '?'
+    if (name === 'ElMenuItem') {
+      let p = this.$parent
+      const chain = []
+      while (p) { chain.push(p.$options.name || '?'); p = p.$parent }
+      console.log('[ElMenuItem] parentChain:', chain)
+    }
+  }
+})
 try {
   app.mount('#app')
 } catch (e) {
