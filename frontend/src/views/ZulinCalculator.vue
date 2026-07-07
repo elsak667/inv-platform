@@ -129,7 +129,7 @@
           </el-tab-pane>
 
           <el-tab-pane label="方案对比" name="scenarios">
-            <el-table :data="scenarioRows" border size="small" style="width:100%">
+            <el-table :data="scenarioRows" border size="small" style="width:100%;margin-bottom:16px">
               <el-table-column prop="name" label="方案" width="120" />
               <el-table-column prop="irr" label="IRR" align="right" width="100" />
               <el-table-column prop="payback" label="回收期" align="right" width="100" />
@@ -137,6 +137,39 @@
               <el-table-column prop="total_tax" label="所得税(万)" align="right" width="120" />
               <el-table-column prop="total_rent" label="租金(万)" align="right" width="120" />
               <el-table-column prop="total_interest" label="总利息(万)" align="right" width="120" />
+            </el-table>
+
+            <div class="section-hd" style="margin:20px 0 12px">敏感性分析</div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px">
+              <el-row :gutter="8" style="margin-bottom:8px">
+                <el-col :span="6"><label>分析参数</label>
+                  <el-select v-model="sensParam" size="small" style="width:100%">
+                    <el-option label="稳定期出租率" value="rental.occupancy_stable" />
+                    <el-option label="满租月租金(万元)" value="rental.monthly_rent_full" />
+                    <el-option label="贷款利率" value="loan.rate" />
+                    <el-option label="租金涨幅" value="rental.growth_rate" />
+                    <el-option label="运营成本占比" value="operating_cost_ratio" />
+                  </el-select>
+                </el-col>
+                <el-col :span="6"><label>最小值</label><el-input-number v-model="sensMin" :min="0" :step="0.01" size="small" style="width:100%" /></el-col>
+                <el-col :span="6"><label>最大值</label><el-input-number v-model="sensMax" :min="0" :step="0.01" size="small" style="width:100%" /></el-col>
+                <el-col :span="6"><label>步长</label><el-input-number v-model="sensStep" :min="0.001" :step="0.01" size="small" style="width:100%" /></el-col>
+              </el-row>
+              <el-row :gutter="8">
+                <el-col :span="6"><el-button type="primary" @click="runSensitivity" :loading="sensRunning" size="small">运行</el-button></el-col>
+              </el-row>
+            </div>
+
+            <div v-if="sensResults.length" class="chart-card full" style="margin-bottom:12px">
+              <div class="card-hd">敏感性分析 — IRR vs {{ sensParamLabel }}</div>
+              <div ref="sensChartRef" style="width:100%;height:280px"></div>
+            </div>
+            <el-table v-if="sensResults.length" :data="sensResults" border size="small" style="width:100%">
+              <el-table-column prop="param" :label="sensParamLabel" align="right" width="120" />
+              <el-table-column prop="irr" label="IRR" align="right" width="100" />
+              <el-table-column prop="payback" label="回收期" align="right" width="100" />
+              <el-table-column prop="cum" label="累计CF(万)" align="right" width="120" />
+              <el-table-column prop="total_tax" label="所得税(万)" align="right" width="120" />
             </el-table>
           </el-tab-pane>
         </el-tabs>
@@ -150,7 +183,7 @@ import api from '../api/index.js'
 import * as echarts from 'echarts'
 
 export default {
-  data() {
+    data() {
     return {
       loading: true, cfg: null, p: null,
       result: null, shieldOn: null, shieldOff: null,
@@ -158,6 +191,12 @@ export default {
       running: false,
       activeTab: 'overview',
       cfChart: null, taxChart: null,
+      // 敏感性分析
+      sensParam: 'rental.occupancy_stable',
+      sensMin: 0.7, sensMax: 0.95, sensStep: 0.05,
+      sensResults: [],
+      sensRunning: false,
+      sensChart: null,
     }
   },
   computed: {
@@ -178,6 +217,16 @@ export default {
         cf: cumCf[i] - (cumCf[i - 1] || 0),
         cum: cumCf[i] || 0,
       }))
+    },
+    sensParamLabel() {
+      const labels = {
+        'rental.occupancy_stable': '出租率',
+        'rental.monthly_rent_full': '月租金(万)',
+        'loan.rate': '利率',
+        'rental.growth_rate': '涨幅',
+        'operating_cost_ratio': '运营占比',
+      }
+      return labels[this.sensParam] || this.sensParam
     },
     scenarioRows() {
       const ps = this.allPlans?.plans || []
@@ -209,8 +258,8 @@ export default {
     async runCalc() {
       this.running = true
       try {
-        const params = { ...this.p, meta: this.cfg.meta, scenarios: this.cfg.scenarios }
-        this.result = await api.calculate('zulin', params, 'optimistic')
+        const params = { ...this.p, meta: this.cfg.meta }
+        this.result = await api.calculate('zulin', params)
         this.activeTab = 'overview'
         await this.$nextTick()
         this.drawCfChart()
@@ -225,14 +274,12 @@ export default {
       } catch (e) { console.error('方案对比失败', e) }
     },
     async runShieldCompare() {
-      const onP = JSON.parse(JSON.stringify(this.p))
-      onP.tax.tax_shield = true
-      const offP = JSON.parse(JSON.stringify(this.p))
-      offP.tax.tax_shield = false
       try {
+        const onP = { ...JSON.parse(JSON.stringify(this.p)), tax: { ...this.p.tax, tax_shield: true } }
+        const offP = { ...JSON.parse(JSON.stringify(this.p)), tax: { ...this.p.tax, tax_shield: false } }
         const [onRes, offRes] = await Promise.all([
-          api.calculate('zulin', { ...onP, meta: this.cfg.meta, scenarios: this.cfg.scenarios }, 'optimistic'),
-          api.calculate('zulin', { ...offP, meta: this.cfg.meta, scenarios: this.cfg.scenarios }, 'optimistic'),
+          api.calculate('zulin', { ...onP, meta: this.cfg.meta }),
+          api.calculate('zulin', { ...offP, meta: this.cfg.meta }),
         ])
         this.shieldOn = onRes
         this.shieldOff = offRes
@@ -265,6 +312,44 @@ export default {
         }],
       })
       this.cfChart.resize()
+    },
+    _setNested(obj, path, val) {
+      const parts = path.split('.')
+      let cur = obj
+      for (let i = 0; i < parts.length - 1; i++) cur = cur[parts[i]]
+      cur[parts[parts.length - 1]] = val
+    },
+    _getNested(obj, path) {
+      return path.split('.').reduce((o, k) => (o || {})[k], obj)
+    },
+    async runSensitivity() {
+      this.sensRunning = true
+      const results = []
+      for (let v = this.sensMin; v <= this.sensMax + this.sensStep * 0.5; v += this.sensStep) {
+        const p = JSON.parse(JSON.stringify(this.p))
+        this._setNested(p, this.sensParam, v)
+        try {
+          const r = await api.calculate('zulin', { ...p, meta: this.cfg.meta })
+          results.push({ param: v, irr: r.irr_pct + '%', payback: (r.payback_year || '—') + '年', cum: this.fmt0(r.cumulative_cash_flow), total_tax: this.fmt0(r.total_tax), _irr: r.irr_pct, _param: v })
+        } catch (e) { console.error('敏感性分析失败', e) }
+      }
+      this.sensResults = results
+      this.sensRunning = false
+      this.$nextTick(() => this.drawSensChart())
+    },
+    drawSensChart() {
+      const el = this.$refs.sensChartRef
+      if (!el || !this.sensResults.length) return
+      if (this.sensChart) this.sensChart.dispose()
+      this.sensChart = echarts.init(el)
+      this.sensChart.setOption({
+        tooltip: { trigger: 'axis', valueFormatter: v => v != null ? v + '%' : '' },
+        grid: { left: 60, right: 24, top: 24, bottom: 36 },
+        xAxis: { type: 'category', data: this.sensResults.map(r => r._param), axisLabel: { rotate: 45, fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { formatter: '{value}%' } },
+        series: [{ type: 'line', data: this.sensResults.map(r => r._irr), smooth: true, lineStyle: { width: 2, color: '#8b5cf6' }, markLine: { symbol: 'none', lineStyle: { type: 'dashed', color: '#94a3b8' }, data: [{ yAxis: this.result?.irr_pct || 5.5, label: { formatter: `基准: ${this.result?.irr_pct || 5.5}%`, position: 'insideEndTop', color: '#94a3b8', fontSize: 11 } }] } }],
+      })
+      this.sensChart.resize()
     },
     drawTaxChart() {
       const el = this.$refs.taxChartRef
