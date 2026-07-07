@@ -49,7 +49,7 @@
           <div class="section-hd">5. 融资</div>
           <el-row :gutter="8">
             <el-col :span="12"><label>年利率</label><el-input-number v-model="p.loan.rate" :min="0" :max="0.15" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
-            <el-col :span="12"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="-30" :max="30" style="width:100%" size="small" /></el-col>
+            <el-col :span="12"><label>贷款期限(年)</label><el-input-number v-model="p.loan.term_years" :min="0" :max="30" :step="0.1" style="width:100%" size="small" /></el-col>
           </el-row>
           <el-row :gutter="8" style="margin-top:8px">
             <el-col :span="12"><label>宽限期(年)</label><el-input-number v-model="p.loan.grace_years" :min="0" :max="5" style="width:100%" size="small" /></el-col>
@@ -162,42 +162,42 @@
                 <span class="tornado-label">稳定期出租率</span>
                 <span class="tornado-base">{{ pct(p.rental.occupancy_stable) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.occupancy_stable']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.occupancy_stable']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">满租月租金</span>
                 <span class="tornado-base">{{ fmt0(p.rental.monthly_rent_full) }}万</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.monthly_rent_full']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.monthly_rent_full']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">运营成本占比</span>
                 <span class="tornado-base">{{ pct(p.operating_cost_ratio) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['operating_cost_ratio']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['operating_cost_ratio']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">贷款利率</span>
                 <span class="tornado-base">{{ pct(p.loan.rate) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['loan.rate']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['loan.rate']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">租金涨幅</span>
                 <span class="tornado-base">{{ pct(p.rental.growth_rate) }}</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['rental.growth_rate']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['rental.growth_rate']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <div class="tornado-row">
                 <span class="tornado-label">收购总价</span>
                 <span class="tornado-base">{{ fmt0(p.acquisition.total_price) }}万</span>
                 <label>±</label>
-                <el-input-number v-model="tornadoPcts['acquisition.total_price']" :min="-30" :max="30" size="small" class="tornado-input" controls-position="right" />
+                <el-input-number v-model="tornadoPcts['acquisition.total_price']" :min="0" :max="30" :step="0.1" size="small" class="tornado-input" controls-position="right" />
                 <label>%</label>
               </div>
               <el-button type="primary" @click="runTornado" :loading="tornadoRunning" size="small" class="tornado-btn">刷新 Tornado</el-button>
@@ -386,7 +386,7 @@ export default {
       ]
       const results = []
       for (const item of items) {
-        const pct = this.tornadoPcts[item.key] || 10
+        const pct = this.tornadoPcts[item.key] ?? 10
         const baseVal = this._getNested(this.p, item.key)
         if (baseVal == null || baseVal === 0) continue
         try {
