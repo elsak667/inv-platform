@@ -363,8 +363,24 @@ export default {
   },
   async mounted() {
     try {
-      const tpl = await api.getTemplate(this.$route.params.templateId)
-      this.params = this.stripMeta(tpl)
+      const saved = sessionStorage.getItem('loadRecord')
+      if (saved) {
+        const record = JSON.parse(saved)
+        const tpl = await api.getTemplate(record.template_id || this.$route.params.templateId)
+        const base = this.stripMeta(tpl)
+        // 用存档 params 覆盖模板默认值
+        const savedParams = typeof record.params === 'string' ? JSON.parse(record.params) : record.params
+        this.params = { ...base, ...savedParams }
+        if (record.results) {
+          this.result = typeof record.results === 'string' ? JSON.parse(record.results) : record.results
+          this.selectedPlan = this.result.plans?.[0]?.plan || ''
+          this.$nextTick(() => this.drawChart())
+        }
+        sessionStorage.removeItem('loadRecord')
+      } else {
+        const tpl = await api.getTemplate(this.$route.params.templateId)
+        this.params = this.stripMeta(tpl)
+      }
     } catch (e) {
       this.$message.error('加载模板失败: ' + (e.response?.data?.detail || e.message))
     }
@@ -449,12 +465,7 @@ export default {
       const chart = echarts.init(this.$refs.chartEl)
       const yd = this.currentPlan.yearly
       const years = yd.map(y => '第' + y.year + '年')
-      const eq = this.currentPlan.equity
-      const dt = this.currentPlan.deed_tax
-      const cum = (() => {
-        let c = 0
-        return yd.map(y => { c += y.rent_income - y.tax - y.opex - y.finance_cost - y.loan_principal + y.sale_revenue; if (y.year === 1) c -= eq + dt; return Math.round(c * 100) / 100 })
-      })()
+      const cum = this.currentPlan.cumulative_cf || yd.map(y => y.cash_flow || 0)
       chart.setOption({
         color: ['#10b981', '#f59e0b', '#94a3b8', '#cbd5e1', '#f87171', '#fca5a5', '#b91c1c', '#3b82f6'],
         tooltip: {
@@ -490,7 +501,7 @@ export default {
           { name: '税费', type: 'bar', stack: 'total', data: yd.map(y => -y.tax) },
           { name: '财务成本', type: 'bar', stack: 'total', data: yd.map(y => -y.finance_cost) },
           { name: '还本支出', type: 'bar', stack: 'total', data: yd.map(y => -y.loan_principal) },
-          { name: '投资支出', type: 'bar', stack: 'total', data: yd.map((y,i) => i === 0 ? -(eq + dt) : 0),
+          { name: '投资支出', type: 'bar', stack: 'total', data: yd.map((y,i) => i === 0 ? -(this.currentPlan.equity + this.currentPlan.deed_tax) : 0),
             itemStyle: { borderRadius: [6,6,0,0] } },
           { name: '现金净额', type: 'line', data: cum,
             smooth: true,

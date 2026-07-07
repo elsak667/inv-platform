@@ -37,41 +37,9 @@ window.addEventListener('unhandledrejection', e => {
   console.error('[unhandled]', e.reason?.stack || e.reason)
 })
 
-// Make wheel/mousewheel listeners passive by default to suppress Chrome violation warnings (from ECharts)
-const origAddEventListener = EventTarget.prototype.addEventListener
-EventTarget.prototype.addEventListener = function(type, fn, options) {
-  if (type === 'wheel' || type === 'mousewheel') {
-    if (options && typeof options === 'object') {
-      options = { ...options, passive: true }
-    } else {
-      options = { capture: !!options, passive: true }
-    }
-  }
-  return origAddEventListener.call(this, type, fn, options)
-}
-
 app.use(router)
 app.use(ElementPlus)
 
-// Trace component creation to catch which component fails
-let compDepth = 0
-app.mixin({
-  beforeCreate() {
-    compDepth++
-    const name = this.$options.name || this.$options.__name || '?'
-    if (name.startsWith('El')) console.log('[trace]', '  '.repeat(Math.min(compDepth, 10)), name)
-  },
-  created() {
-    compDepth--
-    const name = this.$options.name || this.$options.__name || '?'
-    if (name === 'ElMenuItem') {
-      let p = this.$parent
-      const chain = []
-      while (p) { chain.push(p.$options.name || '?'); p = p.$parent }
-      console.log('[ElMenuItem] parentChain:', chain)
-    }
-  }
-})
 try {
   app.mount('#app')
 } catch (e) {

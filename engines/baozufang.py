@@ -261,7 +261,9 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
     # 构建对象
     units = [Unit(**u) for u in config["units"]]
     taxes = TaxParams(**config["taxes"])
-    plan_cfg = next(p for p in config["loan_plans"] if p["id"] == loan_plan_id)
+    plan_cfg = next((p for p in config["loan_plans"] if p["id"] == loan_plan_id), None)
+    if not plan_cfg:
+        raise ValueError(f"方案不存在: {loan_plan_id}")
     plan = LoanPlan(**plan_cfg)
 
     # 1. 投资
@@ -326,6 +328,13 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
         # 运营毛利 = 收入 - 税费 - 折旧 - 运营成本 - 财务成本
         operating_profit = round(rent_total - tax - depreciation - opex - finance_cost, 6)
 
+        # 按年现金流: 与后端 cash_flow_total 总额口径一致
+        cf = round(rent_total - tax - opex - finance_cost - loan_row["principal"], 6)
+        if year == 1:
+            cf = round(cf - inv["deed_tax"] - equity, 6)
+        if year == plan.holding_years:
+            cf = round(cf + sale_revenue, 6)
+
         yearly.append({
             "year": year,
             "rent_income": rent_total,
@@ -339,6 +348,7 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
             "loan_balance": loan_row["end_balance"],
             "sale_revenue": sale_revenue if year == plan.holding_years else 0,
             "sale_profit": 0,
+            "cash_flow": cf,
         })
 
     # 4. 出售毛利 = 累计折旧
@@ -366,6 +376,12 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
     )
     cash_flow_total = round(cash_flow_balance + sale_revenue, 4)
 
+    cumulative_cf = []
+    cum = 0
+    for y in yearly:
+        cum = round(cum + y["cash_flow"], 4)
+        cumulative_cf.append(cum)
+
     return {
         "plan": plan.id,
         "total_investment": total_investment,
@@ -385,6 +401,7 @@ def run_model(config: dict, loan_plan_id: str) -> dict:
         "project_gross_profit": round(operating_profit_total + sale_profit, 4),
         "cash_flow_total": cash_flow_total,
         "cumulative_depreciation": cumulative_dep,
+        "cumulative_cf": cumulative_cf,
     }
 
 

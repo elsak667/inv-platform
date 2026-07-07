@@ -39,7 +39,10 @@ class ReportRequest(BaseModel):
 
 @app.get("/api/templates")
 def api_list_templates():
-    return list_templates()
+    try:
+        return list_templates()
+    except Exception as e:
+        raise HTTPException(500, f"加载模板列表失败: {e}")
 
 
 @app.get("/api/templates/{template_id}")

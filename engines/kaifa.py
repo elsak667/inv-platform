@@ -546,7 +546,6 @@ def calc_cashflow(land_cost: dict, constr: dict, other_direct: dict,
     months = timeline.get("delivery_month", 30) + 6
     cf = [0.0] * (months + 1)
     has_loan = financing.dev_loan_interest_rate > 0 or financing.bridge_loan_rate > 0
-    cf_equity = [0.0] * (months + 1) if has_loan else cf
 
     const_total = constr["total"]
     presale_start = timeline.get("presale_month", 6)
@@ -651,7 +650,8 @@ def calc_cashflow(land_cost: dict, constr: dict, other_direct: dict,
         cf[settle_mo] -= income_tax_diff
 
     # --- 杠杆现金流 (equity_cf) ---
-    if cf_equity is not cf:
+    cf_equity = cf  # default: 无杠杆, 同项目现金流
+    if has_loan:
         # 权益出资
         non_land_cost = total_inv - land_cost["total"]
         equity = round(land_cost["total"] + non_land_cost * financing.equity_ratio, 2)
@@ -723,7 +723,7 @@ def calc_cashflow(land_cost: dict, constr: dict, other_direct: dict,
         return round(abs(peak), 2), peak_m, payback
 
     peak_d, peak_m, payback = _calc_metrics(cf)
-    eq_peak_d, eq_peak_m, eq_payback = _calc_metrics(cf_equity) if cf_equity is not cf else (peak_d, peak_m, payback)
+    eq_peak_d, eq_peak_m, eq_payback = _calc_metrics(cf_equity) if has_loan else (peak_d, peak_m, payback)
 
     return {
         "project_cf": cf,

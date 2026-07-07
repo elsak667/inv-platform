@@ -204,7 +204,6 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
                                 loan_cfg.get("repayment", {}))
 
     # ---------- 逐年现金流 ----------
-    equity = round(acq["total_price"] * (1 - acq["equity_ratio"]), 2)
     # 自有资金 = 收购自有20% + 首次装修
     initial_equity = round(acq["total_price"] * acq["equity_ratio"], 2)
 
@@ -249,7 +248,7 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
                     break
 
         # --- 折旧摊销(非付现) ---
-        dep = round(building_dep, 2) if y >= 0 else 0
+        dep = round(building_dep, 2)
         amort = round(_decor_amort(y), 2)
         total_dep = round(dep + amort, 2)
 

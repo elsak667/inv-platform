@@ -51,7 +51,7 @@ def update_record(rid: int, name: str = None, params: dict = None, results: dict
     with _conn() as c:
         c.execute(f"UPDATE records SET {','.join(sets)} WHERE id=?", args)
         c.commit()
-        return c.total_changes > 0
+        return c.rowcount > 0
 
 
 def list_records(template_id: str = None) -> list[dict]:
@@ -73,4 +73,4 @@ def delete_record(rid: int) -> bool:
     with _conn() as c:
         c.execute("DELETE FROM records WHERE id=?", (rid,))
         c.commit()
-        return c.total_changes > 0
+        return c.rowcount > 0
