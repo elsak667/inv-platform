@@ -307,9 +307,14 @@ export default {
         this.shieldCache = null
         await this.$nextTick()
         this.drawCfChart()
-        this.runShieldCompare()
-        this.runTornado()
-      } catch (e) { this.$message.error(e.response?.data?.detail || e.message) }
+      } catch (e) {
+        console.error('[runCalc]', e, e.stack)
+        this.$message.error(e.message || String(e))
+        this.running = false
+        return
+      }
+      try { await this.runShieldCompare() } catch (e) { console.error('[shield]', e) }
+      try { await this.runTornado() } catch (e) { console.error('[tornado]', e) }
       this.running = false
     },
     saveScenario() {
