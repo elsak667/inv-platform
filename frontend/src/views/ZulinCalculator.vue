@@ -371,11 +371,13 @@ export default {
     },
     drawCfChart() {
       const el = this.$refs.cfChartRef
-      if (!el || !this.result?.cumulative_cf?.length) return
+      const y = this.result?.yearly
+      const cum = this.result?.cumulative_cf
+      if (!el || !y?.length || !cum?.length) return
       if (this.cfChart) this.cfChart.dispose()
       this.cfChart = echarts.init(el)
-      const years = this.result.yearly.map(r => r.calendar_year)
-      const cf = this.result.cumulative_cf
+      const years = y.map(r => r.calendar_year)
+      const cf = [...cum]
       const pb = this.result.payback_year
       this.cfChart.setOption({
         tooltip: { trigger: 'axis', valueFormatter: v => v != null ? this.fmt0(v) + '万' : '' },
