@@ -22,42 +22,26 @@
         </div>
       </div>
       <div style="padding:4px">
-        <el-table :data="records" stripe size="small"
-          :header-cell-style="{ background:'#f8fafc', color:'#334155', fontWeight:600 }"
-          :cell-style="{ padding:'12px 4px' }"
-          style="width:100%">
-          <el-table-column prop="id" label="ID" width="60" align="center">
-            <template #default="{ row }">
-              <span style="font-family:monospace;font-size:12px;color:#64748b">#{{ row.id }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="name" label="方案名称">
-            <template #default="{ row }">
-              <span style="font-weight:500;color:#1e293b">{{ row.name }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="template_id" label="模板" width="200" align="center">
-            <template #default="{ row }">
-              <span style="font-size:12px;color:#64748b">{{ row.template_name || row.template_id }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="created_at" label="创建时间" width="180" align="center">
-            <template #default="{ row }">
-              <span style="font-size:12px;color:#64748b">{{ fmtDate(row.created_at) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="updated_at" label="更新时间" width="180" align="center">
-            <template #default="{ row }">
-              <span style="font-size:12px;color:#64748b">{{ fmtDate(row.updated_at) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="140" align="center">
-            <template #default="{ row }">
-              <el-button type="primary" size="small" @click="load(row)">加载</el-button>
-              <el-button type="danger" size="small" plain @click="del(row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="plain-table-wrap">
+          <table class="plain-table">
+            <thead><tr>
+              <th style="width:60px">ID</th><th>方案名称</th><th style="width:200px">模板</th><th style="width:180px">创建时间</th><th style="width:180px">更新时间</th><th style="width:140px">操作</th>
+            </tr></thead>
+            <tbody>
+              <tr v-for="r in records" :key="r.id">
+                <td><span style="font-family:monospace;color:#64748b">#{{ r.id }}</span></td>
+                <td style="font-weight:500;color:#1e293b;text-align:left;padding-left:14px">{{ r.name }}</td>
+                <td>{{ r.template_name || r.template_id }}</td>
+                <td>{{ fmtDate(r.created_at) }}</td>
+                <td>{{ fmtDate(r.updated_at) }}</td>
+                <td>
+                  <el-button type="primary" size="small" @click="load(r)">加载</el-button>
+                  <el-button type="danger" size="small" plain @click="del(r)">删除</el-button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -140,4 +124,9 @@ export default {
   font-weight: 600;
   color: #1e293b;
 }
+.plain-table-wrap { overflow-x:auto; }
+.plain-table { width:100%; border-collapse:collapse; font-size:13px; }
+.plain-table th { background:#f8fafc; color:#64748b; font-weight:600; padding:12px 8px; text-align:center; border-bottom:1px solid #e2e8f0; }
+.plain-table td { padding:10px 8px; text-align:center; border-bottom:1px solid #f1f5f9; }
+.plain-table tbody tr:hover { background:#f8fafc; }
 </style>
