@@ -15,4 +15,6 @@ export default {
   deleteRecord: (id) => api.delete(`/records/${id}`).then(r => r.data),
   generateReport: (templateId, params, mode) =>
     api.post(`/report/${templateId}`, { params, mode }).then(r => r.data),
+  exportXlsx: (templateId, params, recordId) =>
+    api.post(`/export/${templateId}`, { params, record_id: recordId }, { responseType: 'blob' }).then(r => r.data),
 }

@@ -122,6 +122,10 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
     pt_rate = tax_cfg.get("property_tax_rate", 0.12)
     sur_rate = tax_cfg.get("surcharge_rate", 0.12)
     sd_rate = tax_cfg.get("stamp_duty_rate", 0.001)
+    deed_rate = tax_cfg.get("deed_tax_rate", 0)
+
+    # ---------- 契税(收购一次性) ----------
+    deed_tax = round(acq["total_price"] * deed_rate, 2) if deed_rate > 0 else 0
 
     # ---------- 场景覆盖 ----------
     if scenario_id:
@@ -171,7 +175,9 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
     # ---------- 折旧摊销 ----------
     building_life = dep_cfg["building_life"]
     decor_life = dep_cfg["decoration_life"]
-    building_dep = round(acq["total_price"] / building_life, 2)
+    # 折旧基数 = 收购款 - 契税(契税进投资成本不进折旧, 同保租房口径)
+    depreciation_base = acq["total_price"] - deed_tax
+    building_dep = round(depreciation_base / building_life, 2)
 
     # 装修摊销: 首次33600, 每5年续5600, 摊销n年
     # 首轮: year 2-6 (6720/yr)
@@ -282,9 +288,12 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         # --- 净利润 ---
         net_profit = round(profit_bt - income_tax, 6)
 
+        # --- 契税(收购年一次性) ---
+        deed_tax_outflow = deed_tax if y == 0 else 0
+
         # --- 现金流 ---
-        # 项目现金净流量 = 租金 - 运营成本 - 装修 - 利息 - 还本 - 流转税 - 所得税
-        cf = round(rent - opex - renov_capex - interest - principal - turnover_taxes - income_tax, 6)
+        # 项目现金净流量 = 租金 - 运营成本 - 装修 - 利息 - 还本 - 流转税 - 所得税 - 契税(首年)
+        cf = round(rent - opex - renov_capex - interest - principal - turnover_taxes - income_tax - deed_tax_outflow, 6)
 
         yearly.append({
             "year": year_num,
@@ -306,6 +315,7 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
             "surcharge": surcharge,
             "stamp_duty": stamp_duty,
             "turnover_taxes": turnover_taxes,
+            "deed_tax": deed_tax_outflow,
             "net_profit": net_profit,
             "cash_flow": cf,
             "cumulative_loss": cum_loss if tax_shield and loss_cf else 0,
@@ -357,7 +367,7 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         p = round(y["rent_income"] - y["opex"], 6)
         tax_no_shield += max(0, p) * tax_rate
 
-    total_investment = round(initial_equity + renov["initial_cost"], 2)
+    total_investment = round(initial_equity + renov["initial_cost"] + deed_tax, 2)
     return {
         "scenario": scenario_id or "default",
         "project": config["project"]["name"],
@@ -377,6 +387,7 @@ def run_model(config: dict, scenario_id: str = None) -> dict:
         "total_property_tax": total_pt,
         "total_surcharge": total_sur,
         "total_stamp_duty": total_sd,
+        "deed_tax": deed_tax,
         "total_net_profit": total_profit,
         "sale_revenue": sale_revenue,
         "sale_profit": sale_profit,

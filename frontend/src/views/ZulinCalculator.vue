@@ -71,8 +71,12 @@
             <el-col :span="6"><label>城建附加率</label><el-input-number v-model="p.tax.surcharge_rate" :min="0" :max="0.2" :step="0.01" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
             <el-col :span="6"><label>印花税率</label><el-input-number v-model="p.tax.stamp_duty_rate" :min="0" :max="0.01" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
           </el-row>
+          <el-row :gutter="8" style="margin-top:8px">
+            <el-col :span="12"><label>契税率(收购一次性)</label><el-input-number v-model="p.tax.deed_tax_rate" :min="0" :max="0.1" :step="0.001" :formatter="pct" :parser="unpct" style="width:100%" size="small" /></el-col>
+          </el-row>
         </div>
         <el-button type="primary" @click="runCalc" :loading="running" class="calc-btn">开始测算</el-button>
+        <el-button @click="exportXlsx" :loading="exporting" :disabled="!result" class="export-btn">导出测算表 (Excel)</el-button>
       </div>
 
       <div class="result-panel" v-if="result">
@@ -246,6 +250,7 @@ export default {
       tornadoBaseIrr: null,
       tornadoChart: null,
       tornadoRunning: false,
+      exporting: false,
     }
   },
   computed: {
@@ -298,6 +303,28 @@ export default {
     unpct(v) { return parseFloat(String(v || '0').replace('%', '')) / 100 },
     fmt0(v) { return Number(v || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
     fmtVal(row, col, val) { return this.fmt0(val) },
+    async exportXlsx() {
+      if (!this.result) return
+      this.exporting = true
+      try {
+        const params = { ...this.p, meta: this.cfg.meta }
+        const blob = await api.exportXlsx('zulin', params)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const name = this.cfg.project?.name || '租赁测算'
+        a.download = `${name}_测算表.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      } catch (e) {
+        console.error('[export]', e)
+        this.$message.error('导出失败: ' + (e.message || String(e)))
+      }
+      this.exporting = false
+    },
     async runCalc() {
       this.running = true
       try {
@@ -514,6 +541,7 @@ export default {
 .section-hd { font-size:14px; font-weight:600; color:#1e293b; margin-bottom:12px; }
 label { font-size:10px; color:#64748b; display:block; margin-bottom:2px; }
 .calc-btn { width:100%; height:42px; font-size:15px; margin-top:8px; }
+.export-btn { width:100%; height:38px; font-size:13px; margin-top:8px; }
 .metric-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
 .metric-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
 .metric-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:12px; }

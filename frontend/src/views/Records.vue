@@ -25,7 +25,7 @@
         <div class="plain-table-wrap">
           <table class="plain-table">
             <thead><tr>
-              <th style="width:60px">ID</th><th>方案名称</th><th style="width:200px">模板</th><th style="width:180px">创建时间</th><th style="width:180px">更新时间</th><th style="width:140px">操作</th>
+              <th style="width:60px">ID</th><th>方案名称</th><th style="width:200px">模板</th><th style="width:180px">创建时间</th><th style="width:180px">更新时间</th><th style="width:200px">操作</th>
             </tr></thead>
             <tbody>
               <tr v-for="r in records" :key="r.id">
@@ -36,6 +36,7 @@
                 <td>{{ fmtDate(r.updated_at) }}</td>
                 <td>
                   <el-button type="primary" size="small" @click="load(r)">加载</el-button>
+                  <el-button type="success" size="small" plain @click="exportXlsx(r)" :loading="exportingId === r.id" :disabled="r.template_id !== 'zulin'">导出</el-button>
                   <el-button type="danger" size="small" plain @click="del(r)">删除</el-button>
                 </td>
               </tr>
@@ -51,7 +52,7 @@
 import api from '../api/index.js'
 
 export default {
-  data() { return { records: [] } },
+  data() { return { records: [], exportingId: null } },
   async mounted() { await this.refresh() },
   methods: {
     fmtDate(s) {
@@ -68,6 +69,25 @@ export default {
       await api.deleteRecord(row.id)
       this.$message.success('已删除')
       await this.refresh()
+    },
+    async exportXlsx(row) {
+      this.exportingId = row.id
+      try {
+        const blob = await api.exportXlsx(row.template_id, null, row.id)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${row.name}_测算表.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      } catch (e) {
+        console.error('[export]', e)
+        this.$message.error('导出失败: ' + (e.message || String(e)))
+      }
+      this.exportingId = null
     }
   }
 }

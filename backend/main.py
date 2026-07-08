@@ -1,6 +1,7 @@
-"""FastAPI 入口 - 暴露模板/测算/存档 API"""
+"""FastAPI 入口 - 暴露模板/测算/存档/导出 API"""
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional
 
@@ -8,6 +9,7 @@ from engines import list_templates, load_template
 from services.calculator import calculate, calculate_all_plans
 from services.storage import save_record, list_records, get_record, delete_record
 from services.report import generate_report as _gen_report, generate_ppt_outline as _gen_outline, generate_report_llm as _gen_report_llm
+from services.export_xlsx import export_zulin as _export_zulin
 
 app = FastAPI(title="投资测算平台")
 
@@ -35,6 +37,11 @@ class SaveRequest(BaseModel):
 class ReportRequest(BaseModel):
     params: dict
     mode: str = "template"  # template | llm
+
+
+class ExportRequest(BaseModel):
+    params: Optional[dict] = None
+    record_id: Optional[int] = None  # 若从存档导出, 传 id 直接用存档 results
 
 
 @app.get("/api/templates")
@@ -111,5 +118,58 @@ def api_generate_report(template_id: str, req: ReportRequest):
             md = _gen_report(params, result)
         outline = _gen_outline(params, result)
         return {"markdown": md, "outline": outline}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/export/{template_id}")
+def api_export(template_id: str, req: ExportRequest):
+    """导出测算表 Excel
+
+    两种模式:
+    1. 传 params → 现算现导
+    2. 传 record_id → 从存档取 results 直接导(不重算)
+    """
+    try:
+        tpl = load_template(template_id)
+
+        if req.record_id:
+            rec = get_record(req.record_id)
+            if not rec:
+                raise HTTPException(404, "存档记录不存在")
+            # 存档 params 可能只是部分覆盖, 用模板做底合并
+            saved_params = rec.get("params", {})
+            if isinstance(saved_params, str):
+                import json
+                saved_params = json.loads(saved_params)
+            params = {**tpl, **saved_params}
+            result = rec.get("results")
+            if not result:
+                result = calculate_all_plans(template_id, params)
+            elif isinstance(result, str):
+                import json
+                result = json.loads(result)
+        else:
+            params = req.params or tpl
+            if "meta" not in params:
+                params = {**tpl, **params}
+            result = calculate_all_plans(template_id, params)
+
+        if template_id == "zulin":
+            data = _export_zulin(params, result)
+        else:
+            raise HTTPException(400, f"模板 {template_id} 暂不支持导出")
+        from urllib.parse import quote
+        filename = f"{params.get('project', {}).get('name', template_id)}_测算表.xlsx"
+        encoded = quote(filename)
+        return Response(
+            content=data,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{encoded}\"; filename*=UTF-8''{encoded}",
+            },
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, str(e))

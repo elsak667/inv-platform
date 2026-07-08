@@ -91,11 +91,13 @@ tax:
   tax_shield: true           # 税盾开关
   loss_carryforward: false   # 亏损结转
   carryforward_years: 5      # 结转年限
+  # 契税: 收购时一次性缴纳, 进投资成本, 填0即免征
+  deed_tax_rate: 0
   # 增值税: 9%, 填0即免征(公租房默认免征)
   vat_rate: 0
   # 房产税从租计征: 12%, 填0即免征(公租房默认免征)
   property_tax_rate: 0
-  # 城建税+教育附加: 增值税的 12%, 填0即免征
+  # 城建税+教育费附加+地方教育附加: 增值税的 12%, 填0即免征
   surcharge_rate: 0
   # 印花税: 租金收入的 0.1%, 填0即免征
   stamp_duty_rate: 0

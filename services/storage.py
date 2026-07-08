@@ -71,6 +71,6 @@ def get_record(rid: int) -> dict | None:
 
 def delete_record(rid: int) -> bool:
     with _conn() as c:
-        c.execute("DELETE FROM records WHERE id=?", (rid,))
+        cur = c.execute("DELETE FROM records WHERE id=?", (rid,))
         c.commit()
-        return c.rowcount > 0
+        return cur.rowcount > 0
