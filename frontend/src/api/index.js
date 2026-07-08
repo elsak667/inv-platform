@@ -2,6 +2,15 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
+// 基础防爬: 有 VITE_API_KEY 则自动附带
+const key = import.meta.env.VITE_API_KEY
+if (key) {
+  api.interceptors.request.use(config => {
+    config.headers['X-API-Key'] = key
+    return config
+  })
+}
+
 export default {
   listTemplates: () => api.get('/templates').then(r => r.data),
   getTemplate: (id) => api.get(`/templates/${id}`).then(r => r.data),

@@ -1,5 +1,6 @@
 """FastAPI 入口 - 暴露模板/测算/存档/导出 API"""
-from fastapi import FastAPI, HTTPException
+import os
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -11,11 +12,24 @@ from services.storage import save_record, list_records, get_record, delete_recor
 from services.report import generate_report as _gen_report, generate_ppt_outline as _gen_outline, generate_report_llm as _gen_report_llm
 from services.export_xlsx import export_zulin as _export_zulin
 
+_API_KEY = os.environ.get("API_KEY", "")
+
+
+def _verify_key(x_api_key: Optional[str] = Header(None)):
+    if not _API_KEY:
+        return  # 本地开发, 无 key 跳过
+    if x_api_key != _API_KEY:
+        raise HTTPException(401, "无效的 API Key")
+
+
 app = FastAPI(title="投资测算平台")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://inv.freeagent.qzz.io",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -41,10 +55,10 @@ class ReportRequest(BaseModel):
 
 class ExportRequest(BaseModel):
     params: Optional[dict] = None
-    record_id: Optional[int] = None  # 若从存档导出, 传 id 直接用存档 results
+    record_id: Optional[int] = None
 
 
-@app.get("/api/templates")
+@app.get("/api/templates", dependencies=[Depends(_verify_key)])
 def api_list_templates():
     try:
         return list_templates()
@@ -52,7 +66,7 @@ def api_list_templates():
         raise HTTPException(500, f"加载模板列表失败: {e}")
 
 
-@app.get("/api/templates/{template_id}")
+@app.get("/api/templates/{template_id}", dependencies=[Depends(_verify_key)])
 def api_get_template(template_id: str):
     try:
         return load_template(template_id)
@@ -60,7 +74,7 @@ def api_get_template(template_id: str):
         raise HTTPException(404, str(e))
 
 
-@app.post("/api/calculate")
+@app.post("/api/calculate", dependencies=[Depends(_verify_key)])
 def api_calculate(req: CalcRequest):
     try:
         params = req.params
@@ -74,18 +88,18 @@ def api_calculate(req: CalcRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/api/records")
+@app.post("/api/records", dependencies=[Depends(_verify_key)])
 def api_save_record(req: SaveRequest):
     rid = save_record(req.name, req.template_id, req.params, req.results)
     return {"id": rid}
 
 
-@app.get("/api/records")
+@app.get("/api/records", dependencies=[Depends(_verify_key)])
 def api_list_records(template_id: Optional[str] = None):
     return list_records(template_id)
 
 
-@app.get("/api/records/{rid}")
+@app.get("/api/records/{rid}", dependencies=[Depends(_verify_key)])
 def api_get_record(rid: int):
     r = get_record(rid)
     if not r:
@@ -93,16 +107,15 @@ def api_get_record(rid: int):
     return r
 
 
-@app.delete("/api/records/{rid}")
+@app.delete("/api/records/{rid}", dependencies=[Depends(_verify_key)])
 def api_delete_record(rid: int):
     if not delete_record(rid):
         raise HTTPException(404, "记录不存在")
     return {"ok": True}
 
 
-@app.post("/api/report/{template_id}")
+@app.post("/api/report/{template_id}", dependencies=[Depends(_verify_key)])
 def api_generate_report(template_id: str, req: ReportRequest):
-    """生成分析报告 + PPT 大纲"""
     try:
         params = req.params
         if not params or "meta" not in params:
@@ -122,14 +135,8 @@ def api_generate_report(template_id: str, req: ReportRequest):
         raise HTTPException(400, str(e))
 
 
-@app.post("/api/export/{template_id}")
+@app.post("/api/export/{template_id}", dependencies=[Depends(_verify_key)])
 def api_export(template_id: str, req: ExportRequest):
-    """导出测算表 Excel
-
-    两种模式:
-    1. 传 params → 现算现导
-    2. 传 record_id → 从存档取 results 直接导(不重算)
-    """
     try:
         tpl = load_template(template_id)
 
@@ -137,7 +144,6 @@ def api_export(template_id: str, req: ExportRequest):
             rec = get_record(req.record_id)
             if not rec:
                 raise HTTPException(404, "存档记录不存在")
-            # 存档 params 可能只是部分覆盖, 用模板做底合并
             saved_params = rec.get("params", {})
             if isinstance(saved_params, str):
                 import json

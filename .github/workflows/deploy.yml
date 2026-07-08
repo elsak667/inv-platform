@@ -14,6 +14,8 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
+        env:
+          VITE_API_KEY: ${{ secrets.API_KEY }}
       - name: fix frontend permissions
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -44,6 +46,8 @@ jobs:
             cd /home/ubuntu/apps/inv-platform
             git pull
             .venv/bin/pip install -q -r backend/requirements.txt
+            sudo mkdir -p /etc/systemd/system/inv-platform.service.d
+            printf '[Service]\nEnvironment=API_KEY=%s\n' "${{ secrets.API_KEY }}" | sudo tee /etc/systemd/system/inv-platform.service.d/10-api-key.conf > /dev/null
             sudo fuser -k 8000/tcp 2>/dev/null || true
             sleep 1
             sudo systemctl daemon-reload
