@@ -53,4 +53,4 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl restart inv-platform
             sleep 8
-            curl -sf http://127.0.0.1:8000/api/templates > /dev/null || { echo "health check failed, checking journal..."; sudo journalctl -u inv-platform --no-pager -n 20; exit 1; }
+            curl -sfH "X-API-Key: ${{ secrets.API_KEY }}" http://127.0.0.1:8000/api/templates > /dev/null || { echo "health check failed, checking journal..."; sudo journalctl -u inv-platform --no-pager -n 20; exit 1; }
