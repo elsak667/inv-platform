@@ -46,18 +46,19 @@ jobs:
             cd /home/ubuntu/apps/inv-platform
             git pull
             # 存在≠可用；且解释器必须在 uv 托管目录（不归 dpkg，升级清不掉）
+            # 本块刻意不用 case 语句/函数定义：script_stop 会把退出码检查逐行注入，
+            # 以双分号结尾的 case 分支会被注入坏成语法错误（2026-10-03 部署失败的原因）。
             export UV_PYTHON_PREFERENCE=only-managed
-            venv_ok() {
-              .venv/bin/python -c 'import fastapi' 2>/dev/null || return 1
-              case "$(readlink -f .venv/bin/python3)" in
-                */.local/share/uv/python/*) return 0 ;;
-                *) return 1 ;;
-              esac
-            }
-            venv_ok || {
-              uv python install 3.14 \
-                && rm -rf .venv && uv venv --python 3.14 .venv
-            }
+            ok=1
+            .venv/bin/python -c 'import fastapi' 2>/dev/null || ok=0
+            readlink -f .venv/bin/python3 \
+              | grep -q '/.local/share/uv/python/' || ok=0
+            if [ "$ok" != "1" ]; then
+              echo "venv 不健康或建在系统解释器上，重建到 uv 托管 3.14"
+              uv python install 3.14
+              rm -rf .venv
+              uv venv --python 3.14 .venv
+            fi
             uv pip install -q --python .venv/bin/python \
               -r backend/requirements.txt
             D=/etc/systemd/system/inv-platform.service.d
