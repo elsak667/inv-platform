@@ -45,8 +45,19 @@ jobs:
           script: |
             cd /home/ubuntu/apps/inv-platform
             git pull
-            # uv 建的 venv 不带 pip；且 venv 存在≠可用（系统 python 被换掉后目录还在）
-            [ -x .venv/bin/python ] || uv venv --python 3.14 .venv
+            # 存在≠可用；且解释器必须在 uv 托管目录（不归 dpkg，升级清不掉）
+            export UV_PYTHON_PREFERENCE=only-managed
+            venv_ok() {
+              .venv/bin/python -c 'import fastapi' 2>/dev/null || return 1
+              case "$(readlink -f .venv/bin/python3)" in
+                */.local/share/uv/python/*) return 0 ;;
+                *) return 1 ;;
+              esac
+            }
+            venv_ok || {
+              uv python install 3.14 \
+                && rm -rf .venv && uv venv --python 3.14 .venv
+            }
             uv pip install -q --python .venv/bin/python \
               -r backend/requirements.txt
             D=/etc/systemd/system/inv-platform.service.d
